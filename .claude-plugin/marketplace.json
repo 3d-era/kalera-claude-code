@@ -1,36 +1,38 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "everything-claude-code",
-  "description": "Battle-tested Claude Code configurations from an Anthropic hackathon winner — agents, skills, hooks, rules, and legacy command shims evolved over 10+ months of intensive daily use",
+  "name": "kalera-claude-code",
+  "description": "The complete Claude Code toolkit — everything-claude-code foundation (battle-tested agents, skills, hooks, rules) + Munin long-term memory system. One installer. Everything you need.",
   "owner": {
-    "name": "Affaan Mustafa",
-    "email": "me@affaanmustafa.com"
+    "name": "Kalera / 3D-Era",
+    "email": "kal@kalera.app"
   },
   "metadata": {
-    "description": "Battle-tested Claude Code configurations from an Anthropic hackathon winner"
+    "description": "Complete Claude Code toolkit with Munin memory system"
   },
   "plugins": [
     {
       "name": "everything-claude-code",
       "source": "./",
-      "description": "The most comprehensive Claude Code plugin — 36 agents, 142 skills, 68 legacy command shims, and production-ready hooks for TDD, security scanning, code review, and continuous learning",
-      "version": "1.9.0",
+      "description": "Battle-tested Claude Code plugin — 31 agents, 142 skills, 50 commands, and production-ready hooks. Built on affaan-m/everything-claude-code (50K+ stars, Anthropic hackathon winner). Covers TDD, security scanning, code review, multi-language support, and continuous learning.",
+      "version": "2.0.0",
       "author": {
-        "name": "Affaan Mustafa",
-        "email": "me@affaanmustafa.com"
+        "name": "Kalera / 3D-Era",
+        "email": "kal@kalera.app"
       },
-      "homepage": "https://github.com/affaan-m/everything-claude-code",
-      "repository": "https://github.com/affaan-m/everything-claude-code",
+      "homepage": "https://github.com/3d-era/kalera-claude-code",
+      "repository": "https://github.com/3d-era/kalera-claude-code",
       "license": "MIT",
       "keywords": [
+        "claude-code",
         "agents",
         "skills",
         "hooks",
-        "commands",
+        "rules",
         "tdd",
         "code-review",
         "security",
-        "best-practices"
+        "best-practices",
+        "memory"
       ],
       "category": "workflow",
       "tags": [
@@ -38,10 +40,41 @@
         "skills",
         "hooks",
         "commands",
+        "rules",
         "tdd",
         "code-review",
         "security",
         "best-practices"
+      ],
+      "strict": false
+    },
+    {
+      "name": "munin-claude-code",
+      "source": "./plugins/munin-claude-code",
+      "description": "Munin long-term memory system for Claude Code. Automatic context loading at session start, GraphRAG memory search, error catalog, and per-project memory. Powered by munin.kalera.app.",
+      "version": "1.1.1",
+      "author": {
+        "name": "Kalera / 3D-Era",
+        "email": "kal@kalera.app"
+      },
+      "homepage": "https://github.com/3d-era/kalera-claude-code",
+      "repository": "https://github.com/3d-era/kalera-claude-code",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "memory",
+        "long-term-memory",
+        "graphrag",
+        "error-catalog",
+        "context"
+      ],
+      "category": "memory",
+      "tags": [
+        "memory",
+        "long-term-memory",
+        "graphrag",
+        "context",
+        "error-catalog"
       ],
       "strict": false
     }

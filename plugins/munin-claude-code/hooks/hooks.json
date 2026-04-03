@@ -1,0 +1,63 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-start-hook.sh",
+            "timeout": 30,
+            "statusMessage": "Loading Munin memories..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/stop-hook.sh",
+            "timeout": 15,
+            "statusMessage": "Saving session to Munin..."
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "^/compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post-compact-hook.sh",
+            "timeout": 15,
+            "statusMessage": "Preserving context before compact..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/error-catalog-hook.sh",
+            "timeout": 20,
+            "statusMessage": "Cataloging error..."
+          }
+        ]
+      }
+    ]
+  },
+  "configuration": {
+    "enabled": true,
+    "defaultThrottle": {
+      "maxPerSession": 20,
+      "minIntervalSeconds": 5
+    }
+  }
+}

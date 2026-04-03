@@ -140,32 +140,6 @@
         "id": "pre:mcp-health-check"
       }
     ],
-    "PreCompact": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/run-with-flags.js\" \"pre:compact\" \"scripts/hooks/pre-compact.js\" \"standard,strict\""
-          }
-        ],
-        "description": "Save state before context compaction",
-        "id": "pre:compact"
-      }
-    ],
-    "SessionStart": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/session-start-bootstrap.js\""
-          }
-        ],
-        "description": "Load previous context and detect package manager on new session",
-        "id": "session:start"
-      }
-    ],
     "PostToolUse": [
       {
         "matcher": "Bash",
@@ -309,7 +283,7 @@
             "timeout": 300
           }
         ],
-        "description": "Batch format (Biome/Prettier) and typecheck (tsc) all JS/TS files edited this response — runs once at Stop instead of after every Edit",
+        "description": "Batch format (Biome/Prettier) and typecheck (tsc) all JS/TS files edited this response \u2014 runs once at Stop instead of after every Edit",
         "id": "stop:format-typecheck"
       },
       {

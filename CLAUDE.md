@@ -1,18 +1,19 @@
-# CLAUDE.md
+# CLAUDE.md — Kalera Claude Code
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+> **Kalera Claude Code** is a fork of [affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code) (50K+ stars, Anthropic hackathon winner), with conflicts removed and Munin long-term memory integrated.
 
 ## Project Overview
 
-This is a **Claude Code plugin** - a collection of production-ready agents, skills, hooks, commands, rules, and MCP configurations. The project provides battle-tested workflows for software development using Claude Code.
+This is a **Claude Code plugin** — install via the marketplace or use components directly.
+
+- **Base**: Everything Claude Code v1.9.0 (by Affaan Mustafa)
+- **Addon**: Munin Memory System v1.1.1 (by Kalera / 3D-Era)
+- **Version**: 2.0.0
 
 ## Running Tests
 
 ```bash
-# Run all tests
 node tests/run-all.js
-
-# Run individual test files
 node tests/lib/utils.test.js
 node tests/lib/package-manager.test.js
 node tests/hooks/hooks.test.js
@@ -20,53 +21,67 @@ node tests/hooks/hooks.test.js
 
 ## Architecture
 
-The project is organized into several core components:
-
-- **agents/** - Specialized subagents for delegation (planner, code-reviewer, tdd-guide, etc.)
-- **skills/** - Workflow definitions and domain knowledge (coding standards, patterns, testing)
-- **commands/** - Slash commands invoked by users (/tdd, /plan, /e2e, etc.)
-- **hooks/** - Trigger-based automations (session persistence, pre/post-tool hooks)
-- **rules/** - Always-follow guidelines (security, coding style, testing requirements)
-- **mcp-configs/** - MCP server configurations for external integrations
-- **scripts/** - Cross-platform Node.js utilities for hooks and setup
-- **tests/** - Test suite for scripts and utilities
+```
+kalera-claude-code/
+|-- plugins/
+|   |-- munin-claude-code/   # Munin memory plugin (embedded)
+|
+|-- agents/              # 31 specialized agents
+|-- skills/             # 142 workflow skills
+|-- commands/           # 50 slash commands
+|-- hooks/              # Production-ready hooks
+|-- rules/              # Common + 10 language ecosystems
+|-- mcp-configs/        # MCP server configurations
+|-- scripts/            # Node.js utilities
+```
 
 ## Key Commands
 
-- `/tdd` - Test-driven development workflow
-- `/plan` - Implementation planning
-- `/e2e` - Generate and run E2E tests
-- `/code-review` - Quality review
-- `/build-fix` - Fix build errors
-- `/learn` - Extract patterns from sessions
-- `/skill-create` - Generate skills from git history
-
-## Development Notes
-
-- Package manager detection: npm, pnpm, yarn, bun (configurable via `CLAUDE_PACKAGE_MANAGER` env var or project config)
-- Cross-platform: Windows, macOS, Linux support via Node.js scripts
-- Agent format: Markdown with YAML frontmatter (name, description, tools, model)
-- Skill format: Markdown with clear sections for when to use, how it works, examples
-- Skill placement: Curated in skills/; generated/imported under ~/.claude/skills/. See docs/SKILL-PLACEMENT-POLICY.md
-- Hook format: JSON with matcher conditions and command/notification hooks
-
-## Contributing
-
-Follow the formats in CONTRIBUTING.md:
-- Agents: Markdown with frontmatter (name, description, tools, model)
-- Skills: Clear sections (When to Use, How It Works, Examples)
-- Commands: Markdown with description frontmatter
-- Hooks: JSON with matcher and hooks array
-
-File naming: lowercase with hyphens (e.g., `python-reviewer.md`, `tdd-workflow.md`)
+- `/multi-plan`, `/multi-execute`, `/multi-workflow` — Multi-agent orchestration
+- `/prp-*` — PR workflow (plan, implement, commit, PR, PRD)
+- `/loop-start`, `/loop-status`, `/santa-loop` — Autonomous loop execution
+- `/security-scan` — Run AgentShield security auditor
+- `/prompt-optimize` — Token optimization
+- `/cpp-review`, `/go-review`, `/python-review`, etc. — Language-specific review
 
 ## Skills
 
-Use the following skills when working on related files:
+Skills are the primary workflow surface. Use them when working on related files.
 
-| File(s) | Skill |
-|---------|-------|
-| `README.md` | `/readme` |
-| `.github/workflows/*.yml` | `/ci-workflow` |
+| Category | Skills |
+|----------|--------|
+| **Testing** | `tdd-workflow`, `e2e-testing`, `python-testing`, `golang-testing`, `kotlin-testing` |
+| **Security** | `security-review`, `security-scan`, `django-security`, `laravel-security`, `springboot-security` |
+| **Patterns** | `api-design`, `coding-standards`, `docker-patterns`, `deployment-patterns` |
+| **Languages** | `python-patterns`, `golang-patterns`, `java-coding-standards`, `kotlin-patterns`, `rust-patterns`, `cpp-coding-standards`, `dart-flutter-patterns`, `swiftui-patterns` |
+| **Frameworks** | `frontend-patterns`, `backend-patterns`, `django-patterns`, `laravel-patterns`, `springboot-patterns`, `nestjs-patterns`, `nextjs-turbopack` |
+| **Agentic** | `agentic-engineering`, `autonomous-loops`, `ai-first-engineering`, `nanoclaw-repl`, `prompt-optimizer` |
+| **Research** | `deep-research`, `exa-search`, `documentation-lookup` |
+| **Content** | `article-writing`, `content-engine`, `market-research`, `investor-materials` |
+| **Database** | `postgres-patterns`, `clickhouse-io`, `jpa-patterns`, `database-migrations` |
+| **DevOps** | `docker-patterns`, `deployment-patterns` |
+| **Munin** | `munin-memory`, `munin-architecture`, `munin-error-catalog` (see plugins/munin-claude-code/skills/) |
 
-When spawning subagents, always pass conventions from the respective skill into the agent's prompt.
+## Rules
+
+Always-follow guidelines for code quality. Install to `~/.claude/rules/`:
+
+- `rules/common/` — Language-agnostic principles
+- `rules/typescript/`, `rules/python/`, `rules/golang/`, `rules/java/`, `rules/kotlin/`, `rules/cpp/`, `rules/rust/`, `rules/swift/`, `rules/php/`, `rules/dart/`
+
+## Credits
+
+### Everything Claude Code
+By [Affaan Mustafa](https://github.com/affaan-m) — MIT License
+github.com/affaan-m/everything-claude-code
+
+### Munin Memory System
+By [Kalera / 3D-Era](https://kalera.app) — MIT License
+github.com/3d-era/munin-for-agents | munin.kalera.app
+
+## Contributing
+
+PRs welcome. This repo tracks upstream `affaan-m/everything-claude-code` via `git remote upstream`.
+
+- **Upstream ECC improvements**: contribute directly to the [original repo](https://github.com/affaan-m/everything-claude-code)
+- **Kalera layer** (Munin integration, install story): PRs to this repo
