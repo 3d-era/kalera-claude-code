@@ -7,7 +7,7 @@
 This is a **Claude Code plugin** — install via the marketplace or use components directly.
 
 - **Base**: Everything Claude Code v1.9.0 (by Affaan Mustafa)
-- **Addon**: Munin Memory System v1.1.1 (by Kalera / 3D-Era)
+- **Addon**: Munin Memory System v1.1.1 (by Kalera)
 - **Version**: 2.0.0
 
 ## Running Tests
@@ -76,7 +76,7 @@ By [Affaan Mustafa](https://github.com/affaan-m) — MIT License
 github.com/affaan-m/everything-claude-code
 
 ### Munin Memory System
-By [Kalera / 3D-Era](https://kalera.app) — MIT License
+By [Kalera](https://kalera.app) — MIT License
 github.com/3d-era/munin-for-agents | munin.kalera.app
 
 ## Contributing

@@ -43,7 +43,23 @@ One installer. Everything you need.
 
 ---
 
-## Quick Start — One Command
+## Quick Start
+
+### Step 1 — Munin Account (Free, Required for Memory)
+
+> Munin needs an account to store memories. **It's free.** Sign up takes 30 seconds.
+
+1. Go to [munin.kalera.app](https://munin.kalera.app) → **Sign Up** (free)
+2. Create a project → copy your **Project ID** (`proj_xxxxxxxxxxxx`)
+3. Add to your project `.env`:
+
+```bash
+echo "MUNIN_PROJECT=proj_your_id" >> .env
+```
+
+Without this, Munin features won't work (everything else still works).
+
+### Step 2 — Install
 
 ```bash
 # The one-liner installer
@@ -59,22 +75,17 @@ Or step by step:
 # 2. Install the main plugin (everything-claude-code)
 /plugin install everything-claude-code@kalera-cc
 
-# 3. Install Munin memory (optional but recommended)
+# 3. Install Munin memory
 /plugin install munin-claude-code@kalera-cc
 
 # 4. Restart Claude Code
 ```
 
-### After Install — Setup Munin
+### Step 3 — Verify
 
 ```bash
-# Sign up free at https://munin.kalera.app
-# Create a project, copy your Project ID
-
-# Add to your project's .env:
-echo "MUNIN_PROJECT=proj_your_id" >> .env
-
-# Done! Munin auto-loads context on every session
+# Munin auto-loads context on every session
+# Try: @munin what were we working on last time?
 ```
 
 ---

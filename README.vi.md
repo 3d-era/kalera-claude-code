@@ -43,7 +43,23 @@ Một lệnh cài đặt. Mọi thứ bạn cần.
 
 ---
 
-## Cài Đặt Nhanh — Một Lệnh
+## Cài Đặt Nhanh
+
+### Bước 1 — Tài Khoản Munin (Miễn Phí, Cần Để Dùng Memory)
+
+> Munin cần tài khoản để lưu memories. **Miễn phí.** Đăng ký mất 30 giây.
+
+1. Vào [munin.kalera.app](https://munin.kalera.app) → **Sign Up** (miễn phí)
+2. Tạo project → copy **Project ID** của bạn (`proj_xxxxxxxxxxxx`)
+3. Thêm vào `.env` của dự án:
+
+```bash
+echo "MUNIN_PROJECT=proj_your_id" >> .env
+```
+
+Không có bước này, tính năng Munin sẽ không hoạt động (mọi thứ khác vẫn dùng bình thường).
+
+### Bước 2 — Cài Đặt
 
 ```bash
 # One-liner installer
@@ -59,22 +75,17 @@ Hoặc từng bước:
 # 2. Cài plugin chính (everything-claude-code)
 /plugin install everything-claude-code@kalera-cc
 
-# 3. Cài Munin memory (tùy chọn nhưng khuyến khích)
+# 3. Cài Munin memory
 /plugin install munin-claude-code@kalera-cc
 
 # 4. Khởi động lại Claude Code
 ```
 
-### Sau Khi Cài — Thiết Lập Munin
+### Bước 3 — Kiểm Tra
 
 ```bash
-# Đăng ký miễn phí tại https://munin.kalera.app
-# Tạo project, copy Project ID của bạn
-
-# Thêm vào .env của dự án:
-echo "MUNIN_PROJECT=proj_your_id" >> .env
-
-# Xong! Munin tự nạp ngữ cảnh mỗi phiên
+# Munin tự nạp ngữ cảnh mỗi khi bắt đầu phiên
+# Thử: @munin lần trước chúng ta đang làm gì?
 ```
 
 ---
@@ -127,7 +138,7 @@ GitHub · Supabase · Vercel · Railway · Firecrawl · Exa Search · Sequential
 50K+ stars, giải hackathon Anthropic x Forum Ventures (Sep 2025). Repo này là **fork trực tiếp** — tất cả agents, skills, commands, hooks và rules được lấy từ bản gốc. Kalera Claude Code loại bỏ xung đột, thêm Munin memory, và duy trì remote `upstream` để track updates.
 
 ### Munin Memory System
-> Bởi [Kalera / 3D-Era](https://kalera.app) — [munin.kalera.app](https://munin.kalera.app)
+> Bởi [Kalera](https://kalera.app) — [munin.kalera.app](https://munin.kalera.app)
 
 Hệ thống bộ nhớ dài hạn với GraphRAG. Built as a plugin at [3d-era/munin-for-agents](https://github.com/3d-era/munin-for-agents).
 
