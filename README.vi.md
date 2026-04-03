@@ -1,6 +1,6 @@
 # Kalera Claude Code
 
-> **Bộ công cụ Claude Code hoàn chỉnh — nền tảng everything-claude-code + hệ thống bộ nhớ dài hạn Munin.**
+> **Cách Kalera dùng Claude Code.** Nguyên liệu từ everything-claude-code (50K+ stars) + bí quyết của Kalera: bộ nhớ Munin, cấu hình hợp lý, và workflow thực sự ship được.
 
 [![Stars](https://img.shields.io/github/stars/3d-era/kalera-claude-code?style=flat)](https://github.com/3d-era/kalera-claude-code/stargazers)
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -9,28 +9,42 @@
 
 ## Đây Là Cái Gì?
 
-**Kalera Claude Code** là một plugin Claude Code sẵn sàng sản xuất, kết hợp:
+Đây là **bộ Claude Code Kalera dùng mỗi ngày.** Built trên [everything-claude-code](https://github.com/affaan-m/everything-claude-code) — 50K+ stars, giải hackathon Anthropic — rồi được tinh chỉnh thêm:
 
-- ✅ **Everything Claude Code** — [affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code) (50K+ stars, giải hackathon Anthropic). Agents, skills, hooks, rules, commands đã được thử nghiệm thực tế, hỗ trợ 10+ ngôn ngữ.
-- ✅ **Munin Memory System** — Bộ nhớ dài hạn với GraphRAG, tự động nạp ngữ cảnh phiên, danh mục lỗi, và bộ nhớ riêng theo dự án.
+- 🧠 **Munin** — Bộ nhớ dài hạn. Claude nhớ dự án, nhớ bugs, nhớ quyết định. Không lặp lại.
+- ⚙️ **Plugins được cấu hình sẵn** — Security audit, AI/ML, frontend, parallel research, HuggingFace, và hơn nữa.
+- 🚀 **Install một lệnh** — Xong trên máy mới trong 2 phút.
 
-Một lệnh cài đặt. Mọi thứ bạn cần.
+Nếu everything-claude-code là **nguyên liệu**, thì đây là **công thức.**
 
 ---
 
-## Tính Năng
+## Trong Đó Có Gì
 
-### Từ Everything Claude Code (của [Affaan Mustafa](https://x.com/affaanmustafa))
+### Plugins (26 total)
+
+Đã cài và test chung với nhau. Không phải đoán compatibility.
+
+**Từ Claude Plugins Official:**
+`frontend-design` · `context7` · `code-review` · `feature-dev` · `playwright` · `claude-md-management` · `claude-code-setup` · `huggingface-skills` · `skill-creator`
+
+**Từ Community Marketplaces:**
+`audit` · `explore` · `frontend-developer` · `lyra` · `optimize` · `ui-designer` · `ultrathink` · `ai-engineer` · `api-integration-specialist` · `bug-detective` · `problem-solver-specialist` · `parallel` · `claude-hud`
+
+**Từ Kalera:**
+`munin-claude-code` — Bộ nhớ dài hạn (xem bên dưới)
+
+### Từ Everything Claude Code (lớp nền)
 
 | Danh mục | Số lượng | Ví dụ |
-|----------|----------|--------|
+|----------|-----------|--------|
 | **Agents** | 31 | `code-reviewer`, `security-reviewer`, `build-error-resolver`, reviewer theo ngôn ngữ |
 | **Skills** | 142 | `tdd-workflow`, `security-review`, `api-design`, `docker-patterns`, `python-patterns`, v.v. |
 | **Commands** | 50 | `/multi-plan`, `/multi-execute`, `/prp-*` workflow, `/loop-*`, `/prompt-optimize` |
 | **Rules** | 75+ | Rules chung + TypeScript, Python, Go, Java, Kotlin, C++, Rust, Swift, PHP |
 | **Hooks** | 20+ | PreToolUse, PostToolUse, Stop, SessionEnd |
 
-### Từ Munin Memory System
+### Từ Munin Memory System (bí quyết của Kalera)
 
 | Tính năng | Mô tả |
 |------------|--------|
@@ -51,13 +65,6 @@ Một lệnh cài đặt. Mọi thứ bạn cần.
 
 1. Vào [munin.kalera.app](https://munin.kalera.app) → **Sign Up** (miễn phí)
 2. Tạo project → copy **Project ID** của bạn (`proj_xxxxxxxxxxxx`)
-3. Thêm vào `.env` của dự án:
-
-```bash
-echo "MUNIN_PROJECT=proj_your_id" >> .env
-```
-
-Không có bước này, tính năng Munin sẽ không hoạt động (mọi thứ khác vẫn dùng bình thường).
 
 ### Bước 2 — Cài Đặt
 
@@ -81,11 +88,82 @@ Hoặc từng bước:
 # 4. Khởi động lại Claude Code
 ```
 
-### Bước 3 — Kiểm Tra
+### Bước 3 — Set Munin Project ID
 
 ```bash
-# Munin tự nạp ngữ cảnh mỗi khi bắt đầu phiên
-# Thử: @munin lần trước chúng ta đang làm gì?
+# Chạy lệnh này trong Claude Code:
+/munin-projectid
+
+# Nó sẽ hiện project ID hiện tại hoặc hỏi bạn nhập.
+# Dán Project ID của bạn khi được yêu cầu.
+```
+
+---
+
+## Lệnh Munin
+
+```bash
+@munion lần trước chúng ta đang làm gì?
+@munion tìm bugs về payment API
+@munion xem các quyết định kiến trúc
+
+/munin-projectid   # Kiểm tra hoặc set project ID
+/munin-memory     # Tìm kiếm memories của dự án
+/munin-architecture # Xem ngữ cảnh tech stack
+/munin-error-catalog # Tìm và sửa bugs đã biết
+```
+
+---
+
+## Cách Kalera Làm Việc — Orchestration Patterns
+
+Đây là **bí quyết** giúp Claude Code thực sự ship thay vì chỉ chat:
+
+> **Mọi sub-agent phải gọi Munin ở start và store ở end.** Xem Memory Protocol bên trên.
+
+### Parallel Agents — Không Sequential Nếu Không Cần Thiết
+
+```
+Cho multi-step tasks: spawn tất cả agents độc lập cùng lúc trong MỘT response.
+
+Agent A → Đọc / Hiểu codebase
+Agent B → Research / Tra docs
+Agent C → Lên kế hoạch
+      ↓
+Synthesize kết quả lại
+```
+
+### Chọn Model
+
+| Model | Khi nào dùng |
+|-------|---------------|
+| **Haiku** | Tra cứu nhanh, linting, unit tests |
+| **Sonnet** | Feature thường, refactoring |
+| **Opus** | Kiến trúc phức tạp, debug sâu, security |
+
+### Fork vs Fresh
+
+| | Dùng khi |
+|--|----------|
+| **Fork** (không có `subagent_type`) | Agent cần full context của Pa |
+| **Fresh** (`subagent_type` set) | Task độc lập — tiết kiệm tokens |
+
+### Research First — Rồi Mới Build
+
+```
+Task phức tạp?
+  → Spawn Explore agent TRƯỚC để hiểu codebase
+  → Đợi findings
+  → Rồi spawn Coder agent với context đó
+  → Rồi spawn Reviewer agent để verify
+```
+
+### Workflow: Fix Bug
+
+```
+1. @munin tìm trong error catalog
+2. Có fix cũ → present ngay
+3. Không có → fix + store resolution
 ```
 
 ---
@@ -97,7 +175,7 @@ kalera-claude-code/
 |-- .claude-plugin/          # Plugin manifest + marketplace
 |
 |-- plugins/
-|   |-- munin-claude-code/   # Plugin Munin memory (nhúng sẵn)
+|   |-- munin-claude-code/   # Plugin Munin memory (bí quyết của Kalera)
 |       |-- agents/               # Agent @munin
 |       |-- skills/               # munin-memory, munin-architecture, munin-error-catalog
 |       |-- hooks/                # session-start, post-compact, stop, error-catalog
@@ -106,27 +184,12 @@ kalera-claude-code/
 |-- agents/               # 31 agents chuyên biệt
 |-- skills/             # 142 workflow skills
 |-- commands/           # 50 slash commands
-|-- rules/              # Common + 10 hệ sinh thái ngôn ngữ
-|-- hooks/              # Production-ready hooks
+|-- rules/             # Common + 10 hệ sinh thái ngôn ngữ
+|-- hooks/             # Production-ready hooks
 |-- mcp-configs/       # MCP servers (GitHub, Supabase, Vercel, Railway, v.v.)
+|-- scripts/             # Node.js utilities
 |-- install.sh          # Installer một lệnh
 ```
-
----
-
-## Agents (31)
-
-**Reviewer theo ngôn ngữ:** `typescript-reviewer`, `python-reviewer`, `go-reviewer`, `java-reviewer`, `kotlin-reviewer`, `rust-reviewer`, `cpp-reviewer`, `csharp-reviewer`, `flutter-reviewer`, `dart-reviewer`
-
-**Build resolvers:** `go-build-resolver`, `java-build-resolver`, `kotlin-build-resolver`, `rust-build-resolver`, `cpp-build-resolver`, `dart-build-resolver`, `pytorch-build-resolver`
-
-**Chuyên biệt:** `code-reviewer`, `security-reviewer`, `database-reviewer`, `build-error-resolver`, `refactor-cleaner`, `doc-updater`, `docs-lookup`, `gan-planner`, `gan-generator`, `gan-evaluator`, `opensource-forker`, `opensource-packager`, `opensource-sanitizer`, `performance-optimizer`, `healthcare-reviewer`
-
----
-
-## MCP Servers
-
-GitHub · Supabase · Vercel · Railway · Firecrawl · Exa Search · Sequential Thinking · Cloudflare (Workers, Observability) · ClickHouse · Confluence · Fal.ai · Browserbase · Devfleet · Magic UI
 
 ---
 
@@ -135,12 +198,18 @@ GitHub · Supabase · Vercel · Railway · Firecrawl · Exa Search · Sequential
 ### Everything Claude Code
 > Bởi [Affaan Mustafa](https://github.com/affaan-m) — [github.com/affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)
 
-50K+ stars, giải hackathon Anthropic x Forum Ventures (Sep 2025). Repo này là **fork trực tiếp** — tất cả agents, skills, commands, hooks và rules được lấy từ bản gốc. Kalera Claude Code loại bỏ xung đột, thêm Munin memory, và duy trì remote `upstream` để track updates.
+50K+ stars, giải hackathon Anthropic x Forum Ventures (Sep 2025). **Kalera Claude Code là fork trực tiếp** — tất cả agents, skills, commands, hooks và rules được lấy từ bản gốc. Chúng tôi duy trì `upstream` remote để track updates.
 
 ### Munin Memory System
 > Bởi [Kalera](https://kalera.app) — [munin.kalera.app](https://munin.kalera.app)
 
-Hệ thống bộ nhớ dài hạn với GraphRAG. Built as a plugin at [3d-era/munin-for-agents](https://github.com/3d-era/munin-for-agents).
+Hệ thống bộ nhớ dài hạn với GraphRAG. Built at [3d-era/munin-for-agents](https://github.com/3d-era/munin-for-agents).
+
+### Claude Code Plugins Official
+> [claude.ai/plugins](https://claude.ai/plugins) — frontend-design, context7, code-review, feature-dev, playwright, huggingface-skills, skill-creator, và hơn nữa.
+
+### Community Marketplaces
+> `cc-marketplace` (ananddtyagi/cc-marketplace) · `parallel-agent-skills` (parallel-web/parallel-agent-skills) · `claude-hud` (jarrodwatts/claude-hud)
 
 ---
 
@@ -149,7 +218,7 @@ Hệ thống bộ nhớ dài hạn với GraphRAG. Built as a plugin at [3d-era/
 PRs được chào đón! Repo này track upstream `affaan-m/everything-claude-code` qua `git remote upstream`.
 
 - **Cải thiện ECC upstream**: contribute trực tiếp vào [repo gốc](https://github.com/affaan-m/everything-claude-code)
-- **Lớp Kalera** (tích hợp Munin, install story): PRs vào repo này
+- **Lớp Kalera** (tích hợp Munin, install story, Kalera plugins): PRs vào repo này
 
 ---
 

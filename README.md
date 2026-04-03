@@ -1,6 +1,6 @@
 # Kalera Claude Code
 
-> **The complete Claude Code toolkit — everything-claude-code foundation + Munin long-term memory system.**
+> **How Kalera uses Claude Code.** Ingredients from everything-claude-code (50K+ stars) + our secret sauce: Munin memory, sensible defaults, and a workflow that actually ships.
 
 [![Stars](https://img.shields.io/github/stars/3d-era/kalera-claude-code?style=flat)](https://github.com/3d-era/kalera-claude-code/stargazers)
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -9,18 +9,32 @@
 
 ## What Is This?
 
-**Kalera Claude Code** is a production-ready Claude Code plugin that combines:
+This is the **exact Claude Code setup Kalera uses every day.** It's built on [everything-claude-code](https://github.com/affaan-m/everything-claude-code) — the 50K+ star Anthropic hackathon winner — then tuned with:
 
-- ✅ **Everything Claude Code** — [affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code) (50K+ stars, Anthropic hackathon winner). Battle-tested agents, skills, hooks, rules, and commands across 10+ languages.
-- ✅ **Munin Memory System** — Long-term memory with GraphRAG, automatic session context loading, error catalog, and per-project memory.
+- 🧠 **Munin** — Long-term memory. Claude remembers your project, your bugs, your decisions. No repeating yourself.
+- ⚙️ **Pre-configured plugins** — Security audit, AI/ML, frontend, parallel research, HuggingFace, and more.
+- 🚀 **One-command install** — Works on a fresh machine in under 2 minutes.
 
-One installer. Everything you need.
+If everything-claude-code is the **ingredients**, this is the **recipe.**
 
 ---
 
-## Features
+## What's Inside
 
-### From Everything Claude Code (by [Affaan Mustafa](https://x.com/affaanmustafa))
+### Plugins (26 total)
+
+Installed and tested together. No compatibility guessing.
+
+**From Claude Plugins Official:**
+`frontend-design` · `context7` · `code-review` · `feature-dev` · `playwright` · `claude-md-management` · `claude-code-setup` · `huggingface-skills` · `skill-creator`
+
+**From Community Marketplaces:**
+`audit` · `explore` · `frontend-developer` · `lyra` · `optimize` · `ui-designer` · `ultrathink` · `ai-engineer` · `api-integration-specialist` · `bug-detective` · `problem-solver-specialist` · `parallel` · `claude-hud`
+
+**From Kalera:**
+`munin-claude-code` — Long-term memory (see below)
+
+### From Everything Claude Code (base layer)
 
 | Category | Count | Examples |
 |----------|-------|---------|
@@ -30,7 +44,7 @@ One installer. Everything you need.
 | **Rules** | 75+ | Common rules + TypeScript, Python, Go, Java, Kotlin, C++, Rust, Swift, PHP |
 | **Hooks** | 20+ | PreToolUse, PostToolUse, Stop, SessionEnd |
 
-### From Munin Memory System
+### From Munin Memory System (Kalera's secret sauce)
 
 | Feature | What It Does |
 |---------|-------------|
@@ -51,13 +65,6 @@ One installer. Everything you need.
 
 1. Go to [munin.kalera.app](https://munin.kalera.app) → **Sign Up** (free)
 2. Create a project → copy your **Project ID** (`proj_xxxxxxxxxxxx`)
-3. Add to your project `.env`:
-
-```bash
-echo "MUNIN_PROJECT=proj_your_id" >> .env
-```
-
-Without this, Munin features won't work (everything else still works).
 
 ### Step 2 — Install
 
@@ -81,11 +88,109 @@ Or step by step:
 # 4. Restart Claude Code
 ```
 
-### Step 3 — Verify
+### Step 3 — Set Your Munin Project ID
 
 ```bash
-# Munin auto-loads context on every session
-# Try: @munin what were we working on last time?
+# Run this command in Claude Code:
+/munin-projectid
+
+# It will show your current ID or prompt you to set it.
+# Paste your Project ID when asked.
+```
+
+---
+
+## Munin Commands
+
+```bash
+@munion what were we working on last time?
+@munion find errors about the payment API
+@munion show architecture decisions
+
+/munin-projectid   # Check or set your project ID
+/munin-memory     # Search project memories
+/munin-architecture # View tech stack context
+/munin-error-catalog # Search + fix known bugs
+```
+
+---
+
+## How Kalera Works — Orchestration Patterns
+
+These are the **turf secrets** that make Claude Code actually ship instead of just chat:
+
+> **Every sub-agent MUST call Munin at start and store findings at end.** See Memory Protocol above.
+
+### Parallel Agents — Never Sequential If You Can Help It
+
+```
+For multi-step tasks: spawn ALL independent agents at once in a SINGLE response.
+
+Agent A → Read / Understand codebase
+Agent B → Research / Look up docs
+Agent C → Plan implementation
+      ↓
+You synthesize all results together
+```
+
+### Model Selection
+
+| Model | When to use |
+|-------|-------------|
+| **Haiku** | Fast lookups, linting, unit tests |
+| **Sonnet** | Standard features, refactoring |
+| **Opus** | Complex architecture, deep debugging, security |
+
+### Fork vs Fresh
+
+| | Use when |
+|--|----------|
+| **Fork** (no `subagent_type`) | Agent needs your full context |
+| **Fresh** (`subagent_type` set) | Independent task — save tokens |
+
+### Research First — Then Build
+
+```
+Complex task?
+  → Spawn Explore agent FIRST to understand codebase
+  → Wait for findings
+  → Then spawn Coder agent with the context
+  → Then spawn Reviewer agent to verify
+```
+
+### Workflow: Error Fix
+
+```
+1. @munin search the error catalog
+2. If found → present existing fix immediately
+3. If not → fix + store the resolution
+```
+
+---
+
+## Architecture
+
+```
+kalera-claude-code/
+|-- .claude-plugin/          # Plugin manifest + marketplace
+|   |-- plugin.json              # Main plugin (ECC-based, v2.0.0)
+|   |-- marketplace.json         # Two plugins: ECC + Munin
+|
+|-- plugins/
+|   |-- munin-claude-code/   # Munin memory plugin (Kalera's secret sauce)
+|       |-- agents/               # @munin agent
+|       |-- skills/               # munin-memory, munin-architecture, munin-error-catalog
+|       |-- hooks/                # session-start, post-compact, stop, error-catalog
+|       |-- .mcp.json             # Munin MCP server config
+|
+|-- agents/               # 31 specialized agents
+|-- skills/             # 142 workflow skills
+|-- commands/           # 50 slash commands
+|-- rules/             # Common + 10 language ecosystems
+|-- hooks/             # Production-ready hooks
+|-- mcp-configs/       # MCP servers (GitHub, Supabase, Vercel, Railway, etc.)
+|-- scripts/           # Node.js utilities
+|-- install.sh        # One-command installer
 ```
 
 ---
@@ -95,61 +200,27 @@ Or step by step:
 ### Everything Claude Code
 > By [Affaan Mustafa](https://github.com/affaan-m) — [github.com/affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code)
 
-50K+ stars, Anthropic x Forum Ventures hackathon winner (Sep 2025). This repo is a **direct fork** — all agents, skills, commands, hooks, and rules are derived from the original. Kalera Claude Code removes conflicts, adds Munin memory, and maintains a `upstream` remote to track updates.
+50K+ stars, Anthropic x Forum Ventures hackathon winner (Sep 2025). **Kalera Claude Code is a direct fork** — all agents, skills, commands, hooks, and rules are derived from the original. We maintain an `upstream` remote to track updates.
 
 ### Munin Memory System
-> By [Kalera / 3D-Era](https://kalera.app) — [munin.kalera.app](https://munin.kalera.app)
+> By [Kalera](https://kalera.app) — [munin.kalera.app](https://munin.kalera.app)
 
-Long-term memory system with GraphRAG. Built as a plugin at [3d-era/munin-for-agents](https://github.com/3d-era/munin-for-agents).
+Long-term memory system with GraphRAG. Built at [3d-era/munin-for-agents](https://github.com/3d-era/munin-for-agents).
 
----
+### Claude Code Plugins Official
+> [claude.ai/plugins](https://claude.ai/plugins) — frontend-design, context7, code-review, feature-dev, playwright, huggingface-skills, skill-creator, and more.
 
-## What's Inside
-
-```
-kalera-claude-code/
-|-- .claude-plugin/          # Plugin manifest + marketplace
-|   |-- plugin.json              # Main plugin (ECC-based, v2.0.0)
-|   |-- marketplace.json         # Two plugins: ECC + Munin
-|
-|-- plugins/
-|   |-- munin-claude-code/   # Munin memory plugin (embedded)
-|       |-- agents/               # @munin agent
-|       |-- skills/               # munin-memory, munin-architecture, munin-error-catalog
-|       |-- hooks/                # session-start, post-compact, stop, error-catalog
-|       |-- .mcp.json             # Munin MCP server config
-|
-|-- agents/               # 31 specialized agents
-|-- skills/              # 142 workflow skills
-|-- commands/            # 50 slash commands
-|-- rules/               # Common + 10 language ecosystems
-|-- hooks/               # Production-ready hooks (session, quality, security)
-|-- mcp-configs/         # MCP servers (GitHub, Supabase, Vercel, Railway, etc.)
-|-- scripts/             # Node.js utilities
-|-- install.sh           # One-command installer
-```
-
----
-
-## Agents (31)
-
-Language reviewers: `typescript-reviewer`, `python-reviewer`, `go-reviewer`, `java-reviewer`, `kotlin-reviewer`, `rust-reviewer`, `cpp-reviewer`, `csharp-reviewer`, `flutter-reviewer`, `dart-reviewer`
-
-Build resolvers: `go-build-resolver`, `java-build-resolver`, `kotlin-build-resolver`, `rust-build-resolver`, `cpp-build-resolver`, `dart-build-resolver`, `pytorch-build-resolver`
-
-Specialized: `code-reviewer`, `security-reviewer`, `database-reviewer`, `build-error-resolver`, `refactor-cleaner`, `doc-updater`, `docs-lookup`, `gan-planner`, `gan-generator`, `gan-evaluator`, `opensource-forker`, `opensource-packager`, `opensource-sanitizer`, `performance-optimizer`, `healthcare-reviewer`
-
----
-
-## MCP Servers Available
-
-GitHub · Supabase · Vercel · Railway · Firecrawl · Exa Search · Sequential Thinking · Cloudflare (Workers, Observability) · ClickHouse · Confluence · Fal.ai · Browserbase · Devfleet · Magic UI
+### Community Marketplaces
+> `cc-marketplace` (ananddtyagi/cc-marketplace) · `parallel-agent-skills` (parallel-web/parallel-agent-skills) · `claude-hud` (jarrodwatts/claude-hud)
 
 ---
 
 ## Contributing
 
-This repo maintains a `upstream` remote to [affaan-m/everything-claude-code](https://github.com/affaan-m/everything-claude-code). PRs that improve the Kalera layer (Munin integration, install story) are welcome. For upstream ECC improvements, please contribute directly to the original repo.
+PRs welcome. This repo tracks upstream `affaan-m/everything-claude-code` via `git remote upstream`.
+
+- **Upstream ECC improvements**: contribute directly to the [original repo](https://github.com/affaan-m/everything-claude-code)
+- **Kalera layer** (Munin integration, install story, Kalera plugins): PRs to this repo
 
 ---
 
