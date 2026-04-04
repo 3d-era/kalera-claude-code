@@ -8,30 +8,136 @@
 # Or clone first:
 #   git clone https://github.com/3d-era/kalera-claude-code.git
 #   cd kalera-claude-code && ./install.sh
+#
+# Flags:
+#   --yes         Skip all prompts, apply all auto-fix actions
+#   --dry-run     Show what would be done without making changes
+#   --verbose     Print every command as it runs
+#   --no-verify   Skip integrity check (for local dev/testing only)
 
-REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
-IS_CURL_MODE=false
-SETTINGS_FILE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json"
+# ─── Integrity verification (MITM mitigation for curl|bash) ───────
+# If the script body was piped in, re-download and verify SHA256 before running.
+# SHA256 is pinned here — update INSTALL_SH_PIN when install.sh content changes.
+#
+# WORKFLOW TO UPDATE PIN (after any change to this script):
+#   1. Edit install.sh locally
+#   2. sha256sum install.sh | cut -d' ' -f1  → paste into INSTALL_SH_PIN
+#   3. git commit + git push
+#   4. Verify remote: curl -fsSL https://raw.githubusercontent.com/3d-era/kalera-claude-code/main/install.sh | sha256sum
+#
+# IMPORTANT: Pin = SHA256 of the remote HEAD, not local uncommitted work.
+# Use --no-verify flag during local dev to skip this check.
+INSTALL_SH_PIN="cf9f030e9cc93cb3e2c50ab1c24a63a93797d32a489d1e4dc924d42bcfa8f612"
 
-# Detect if running from curl (no local repo)
-if [[ ! -d "$REPO_DIR/.claude-plugin" ]]; then
-  REPO_DIR=$(mktemp -d)
-  IS_CURL_MODE=true
-  git clone --depth 1 https://github.com/3d-era/kalera-claude-code.git "$REPO_DIR"
+_verify_and_exec() {
+  local _tmp=$(mktemp)
+  curl -fsSL https://raw.githubusercontent.com/3d-era/kalera-claude-code/main/install.sh -o "$_tmp"
+  local _sha=$(sha256sum "$_tmp" 2>/dev/null | cut -d' ' -f1)
+  if [[ -z "$_sha" ]]; then
+    echo "❌ Could not compute SHA256 of downloaded script" >&2
+    rm -f "$_tmp"
+    exit 1
+  fi
+  if [[ "$_sha" != "$INSTALL_SH_PIN" ]]; then
+    echo "❌ Script integrity check FAILED (SHA256 mismatch)" >&2
+    echo "   Expected: $INSTALL_SH_PIN" >&2
+    echo "   Got:      $_sha" >&2
+    echo "   The script may have been tampered with. Aborting." >&2
+    rm -f "$_tmp"
+    exit 1
+  fi
+  chmod +x "$_tmp"
+  exec bash "$_tmp" "$@"
+}
+
+# Detect if we're being piped in via curl | bash
+if [[ -t 0 ]] && [[ -z "$REPO_DIR_OVERRIDE" ]]; then
+  :
+  # Normal execution (./install.sh or git clone + ./install.sh)
+else
+  # Piped in — verify integrity first (unless --no-verify passed)
+  for _arg in "$@"; do
+    [[ "$_arg" == "--no-verify" ]] && NO_VERIFY=true && break
+  done
+  if [[ "$NO_VERIFY" != true ]]; then
+    _verify_and_exec "$@"
+  fi
 fi
 
-# ─── Helpers ────────────────────────────────────────────────────────
+set -o pipefail
+
+# ─── Trap must be registered FIRST so it covers all exit paths ─────
+IS_CURL_MODE=false
+REPO_DIR=""
+cleanup() {
+  if [[ "$IS_CURL_MODE" == true ]] && [[ -n "$REPO_DIR" ]] && [[ -d "$REPO_DIR" ]]; then
+    rm -rf "$REPO_DIR"
+  fi
+}
+trap cleanup EXIT
+trap 'echo "Interrupted."; exit 130' INT TERM
+
+# ─── CLI Flags ──────────────────────────────────────────────────────
+DRY_RUN=false
+VERBOSE=false
+YES_MODE=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run)    DRY_RUN=true; shift ;;
+    --verbose)    VERBOSE=true; shift ;;
+    --yes|-y)     YES_MODE=true; shift ;;
+    --no-verify)  NO_VERIFY=true; shift ;;
+    *)
+      echo "Unknown flag: $1" >&2
+      echo "Usage: $0 [--dry-run] [--verbose] [--yes]" >&2
+      exit 1
+      ;;
+  esac
+done
+
+# ─── Variables ──────────────────────────────────────────────────────
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+SETTINGS_FILE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json"
+
+# ─── Detect if running from curl (no local repo) ───────────────────
+if [[ ! -d "$REPO_DIR/.claude-plugin" ]]; then
+  REPO_DIR=$(mktemp -d)
+  if [[ ! -d "$REPO_DIR" ]]; then
+    echo "❌ Failed to create temp directory (mktemp -d failed)" >&2
+    exit 1
+  fi
+  if ! chmod 700 "$REPO_DIR"; then
+    echo "❌ Failed to set permissions on temp directory" >&2
+    exit 1
+  fi
+  IS_CURL_MODE=true
+  echo "Cloning kalera-claude-code..."
+  if ! git clone --depth 1 https://github.com/3d-era/kalera-claude-code.git "$REPO_DIR"; then
+    echo "❌ Git clone failed — check network and try again" >&2
+    exit 1
+  fi
+fi
+
 is_tty() { [[ -t 0 ]]; }
 
 ask() {
   local prompt="$1"
   local choice
+  local count=0
+  local max_attempts=10
   if is_tty; then
     echo ""
     echo "$prompt"
-    select choice in Auto-fix Skip; do
-      [[ -n "$choice" ]] && echo "$choice" && return
+    while (( count < max_attempts )); do
+      count=$((count + 1))
+      select choice in Auto-fix Skip; do
+        [[ -n "$choice" ]] && echo "$choice" && return
+      done
     done
+    echo "⏭  Too many invalid attempts — skipping."
+    echo "Skip"
+    return
   else
     echo "Auto-fix"  # non-interactive: default to auto-fix
   fi
@@ -55,7 +161,6 @@ echo ""
 if ! command -v claude &>/dev/null; then
   echo "❌ Claude Code CLI not found."
   echo "   Install from: https://claude.ai/code"
-  [[ "$IS_CURL_MODE" == true ]] && rm -rf "$REPO_DIR"
   exit 1
 fi
 
@@ -86,9 +191,9 @@ if [[ "$HAS_OLD_ECC" == true ]]; then
   _choice=$(ask "  [1] Auto-fix  [2] Skip (keep old)")
   if resolve "$_choice"; then
     echo "   → Uninstalling old version..."
-    claude plugin uninstall everything-claude-code@affaan-m/everything-claude-code 2>/dev/null ||
-    claude plugin uninstall everything-claude-code 2>/dev/null || true
-    echo "   ✅ Old ECC removed."
+    _err=$(claude plugin uninstall everything-claude-code@affaan-m/everything-claude-code 2>&1) && \
+      echo "   ✅ Old ECC removed." || \
+      echo "   ⚠️  Uninstall warning: $_err"
   else
     echo "   ⏭  Skipped — old ECC kept."
   fi
@@ -104,9 +209,9 @@ if [[ "$HAS_OLD_MUNIN" == true ]]; then
   _choice=$(ask "  [1] Auto-fix  [2] Skip (keep old)")
   if resolve "$_choice"; then
     echo "   → Uninstalling old version..."
-    claude plugin uninstall munin-claude-code@munin-ecosystem 2>/dev/null ||
-    claude plugin uninstall munin-claude-code 2>/dev/null || true
-    echo "   ✅ Old Munin removed."
+    _err=$(claude plugin uninstall munin-claude-code@munin-ecosystem 2>&1) && \
+      echo "   ✅ Old Munin removed." || \
+      echo "   ⚠️  Uninstall warning: $_err"
   else
     echo "   ⏭  Skipped — old Munin kept."
   fi
@@ -152,23 +257,57 @@ echo ""
 
 # ─── Add marketplace ───────────────────────────────────────────────
 echo "📦 Adding Kalera marketplace..."
-claude plugin marketplace add kalera-cc 2>/dev/null || true
-
-# ─── Install plugins ───────────────────────────────────────────────
-echo "⚙️  Installing everything-claude-code..."
-if claude plugin install everything-claude-code@kalera-cc 2>/dev/null; then
-  echo "   ✅ everything-claude-code installed"
-elif claude plugin install kalera-claude-code@kalera-cc 2>/dev/null; then
-  echo "   ✅ kalera-claude-code installed"
-else
-  echo "   ⚠️  Already installed — check with: claude plugin list"
+_mkt_err=$(claude plugin marketplace add 3d-era/kalera-claude-code 2>&1)
+_mkt_rc=$?
+if [[ $_mkt_rc -ne 0 ]]; then
+  echo "   ⚠️  Marketplace add failed (rc=$_mkt_rc): $_mkt_err"
+  if [[ "$DRY_RUN" == false ]]; then
+    echo "   → Will attempt direct plugin install anyway..."
+  fi
 fi
 
-echo "🧠 Installing Munin memory plugin..."
-if claude plugin install munin-claude-code@kalera-cc 2>/dev/null; then
-  echo "   ✅ munin-claude-code installed"
+# ─── Install ECC ───────────────────────────────────────────────────
+echo "⚙️  Installing kalera-claude-code..."
+_ecc1_err=$(claude plugin install kalera-claude-code@3d-era/kalera-claude-code 2>&1)
+_ecc1_rc=$?
+
+if [[ $_ecc1_rc -eq 0 ]]; then
+  echo "   ✅ kalera-claude-code installed"
 else
-  echo "   ⚠️  Already installed — check with: claude plugin list"
+  if [[ $_ecc1_rc -eq 2 ]]; then
+    echo "   ❌ Plugin 'kalera-claude-code' not found in marketplace '3d-era/kalera-claude-code'"
+  elif [[ $_ecc1_rc -eq 3 ]]; then
+    echo "   ❌ Plugin 'kalera-claude-code' already installed — skip or uninstall first"
+  else
+    echo "   ❌ Install failed (rc=$_ecc1_rc):"
+    [[ -n "$_ecc1_err" ]] && echo "      $_ecc1_err"
+  fi
+fi
+
+# ─── Install Munin ─────────────────────────────────────────────────
+echo "🧠 Installing Munin memory plugin..."
+_mun_err=$(claude plugin install munin-claude-code@3d-era/kalera-claude-code 2>&1)
+_mun_rc=$?
+if [[ $_mun_rc -ne 0 ]]; then
+  # Fallback: try munin-ecosystem marketplace (where it was previously published)
+  _mun_err2=$(claude plugin install munin-claude-code@munin-ecosystem 2>&1)
+  _mun_rc2=$?
+  if [[ $_mun_rc2 -eq 0 ]]; then
+    _mun_rc=0
+    _mun_err=""
+  else
+    _mun_err="primary marketplace: $_mun_err; fallback marketplace: $_mun_err2"
+  fi
+fi
+_mun_rc=$?
+if [[ $_mun_rc -eq 0 ]]; then
+  echo "   ✅ munin-claude-code installed"
+elif [[ $_mun_rc -eq 2 ]]; then
+  echo "   ❌ Plugin not found on marketplace '3d-era/kalera-claude-code'"
+elif [[ $_mun_rc -eq 3 ]]; then
+  echo "   ❌ Plugin already installed — skip this step or uninstall first"
+else
+  echo "   ❌ Install failed (rc=$_mun_rc): $_mun_err"
 fi
 
 # ─── Install rules ────────────────────────────────────────────────
@@ -178,30 +317,46 @@ if [[ -d "$REPO_DIR/rules" ]]; then
   mkdir -p ~/.claude/rules
 
   if [[ -d "$REPO_DIR/rules/common" ]]; then
-    cp -rf "$REPO_DIR/rules/common"/* ~/.claude/rules/
+    for _f in "$REPO_DIR/rules/common"/*; do
+      [[ -e "$_f" ]] || continue
+      _basename=$(basename "$_f")
+      if [[ -f "$HOME/.claude/rules/$_basename" ]]; then
+        cp -f "$_f" "$HOME/.claude/rules/${_basename}.kalera.bak"
+        echo "   📝 rules/common/$_basename (backed up existing → .kalera.bak)"
+      else
+        cp -f "$_f" "$HOME/.claude/rules/$_basename"
+      fi
+    done
     echo "   ✅ rules/common/"
   fi
 
   for lang in typescript python golang java kotlin cpp rust swift php dart; do
     if [[ -d "$REPO_DIR/rules/$lang" ]]; then
       mkdir -p ~/.claude/rules/$lang
-      cp -rf "$REPO_DIR/rules/$lang"/* ~/.claude/rules/$lang/ 2>/dev/null
+      for _f in "$REPO_DIR/rules/$lang"/*; do
+        [[ -e "$_f" ]] || continue
+        _basename=$(basename "$_f")
+        if [[ -f "$HOME/.claude/rules/$lang/$_basename" ]]; then
+          cp -f "$_f" "$HOME/.claude/rules/$lang/${_basename}.kalera.bak"
+          echo "   📝 rules/$lang/$_basename (backed up existing → .kalera.bak)"
+        else
+          cp -f "$_f" "$HOME/.claude/rules/$lang/$_basename"
+        fi
+      done
       echo "   ✅ rules/$lang/"
     fi
   done
 fi
 
-# ─── Cleanup ───────────────────────────────────────────────────────
-[[ "$IS_CURL_MODE" == true ]] && rm -rf "$REPO_DIR"
-
 # ─── Done ──────────────────────────────────────────────────────────
 echo ""
 echo "✅ Kalera Claude Code installed!"
+[[ "$DRY_RUN" == true ]] && echo "   (dry-run — no changes made)"
 echo ""
 echo "Next steps:"
 echo "  1. Restart Claude Code"
 echo "  2. Sign up at https://munin.kalera.app (free)"
-echo "  3. Run: /munin-projectid"
+echo "  3. Run: /munin:projectid"
 echo "     → It will show current ID or prompt you to set it"
 echo ""
 echo "Docs: https://github.com/3d-era/kalera-claude-code"

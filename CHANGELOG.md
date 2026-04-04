@@ -6,10 +6,13 @@ All notable changes to **Kalera Claude Code** are documented here.
 
 ### Added
 - **Munin Memory Plugin** embedded at `plugins/munin-claude-code/` (agents, skills, hooks, MCP config)
-- **`install.sh`** — One-command installer with conflict detection + auto-fix
+- **`install.sh`** — One-command installer with conflict detection + auto-fix, SHA256 integrity verification
 - **`README.vi.md`** — Vietnamese translation
 - **`Dockerfile`** — Zero-to-install test container
-- **Marketplace** `kalera-cc` with two plugins: `everything-claude-code` + `munin-claude-code`
+- **Marketplace** `3d-era/kalera-claude-code` with two plugins: `kalera-claude-code` + `munin-claude-code`
+- **`--yes` / `--dry-run` / `--verbose` / `--no-verify`** CLI flags for install.sh
+- **`trap` cleanup** on EXIT/INT/TERM — prevents orphan temp directories on interrupt
+- **Rules backup** — existing `~/.claude/rules/` files backed up as `.kalera.bak` before overwrite
 
 ### Removed (Conflicts resolved)
 - **MCP**: `memory`, `omega-memory`, `context7`, `playwright` (duplicate — Pa has official versions)
@@ -24,10 +27,24 @@ All notable changes to **Kalera Claude Code** are documented here.
 - **README**: Rewritten with full credits, Quick Start in 3 steps (Munin account first)
 - **CLAUDE.md**: Updated with unified architecture + credits
 - **README.vi.md**: Vietnamese translation added
+- **Plugin name in marketplace.json**: `everything-claude-code` → `kalera-claude-code`
+- **`marketplace` name**: `kalera-cc` → `3d-era/kalera-claude-code` (GitHub repo path)
 
 ### Security
+- SHA256 pinned integrity check for `curl | bash` install pattern — MITM mitigation
+- `trap cleanup EXIT/INT/TERM` — prevents temp directory leaks on Ctrl+C or crash
+- `chmod 700` on `mktemp -d` temp directories — explicit permission hardening
 - Conflict detection: auto-fixes or warns about duplicate plugin/MCP installations
 - E2EE memory: Munin supports end-to-end encrypted storage via Hash Key
+- Plugin uninstall errors now captured and displayed (no silent `|| true` swallowing)
+- `select` loop guard (max 10 attempts) — prevents infinite loops on invalid input
+
+### Fixed (install.sh)
+- Plugin marketplace name: `kalera-cc` → `3d-era/kalera-claude-code`
+- Plugin install name: `everything-claude-code` → `kalera-claude-code` (matches marketplace.json)
+- Distinct error messages: rc=2 (not found) / rc=3 (already installed) / other (real failure)
+- `git clone` and `mktemp -d` exit codes now validated with explicit error messages
+- Munin install: fallback to `munin-claude-code@munin-ecosystem` marketplace if primary fails
 
 ---
 
