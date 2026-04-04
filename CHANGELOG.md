@@ -40,7 +40,7 @@ All notable changes to **Kalera Claude Code** are documented here.
 - `select` loop guard (max 10 attempts) — prevents infinite loops on invalid input
 
 ### Fixed (install.sh)
-- Plugin marketplace name: `kalera-cc` → `3d-era/kalera-claude-code`
+- Marketplace name: `3d-era/kalera-claude-code` → `kalera-claude-code` (format: `plugin@marketplace-alias`, not `owner/repo`)
 - Plugin install name: `everything-claude-code` → `kalera-claude-code` (matches marketplace.json)
 - Distinct error messages: rc=2 (not found) / rc=3 (already installed) / other (real failure)
 - `git clone` and `mktemp -d` exit codes now validated with explicit error messages

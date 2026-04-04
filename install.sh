@@ -27,7 +27,7 @@
 #
 # IMPORTANT: Pin = SHA256 of the remote HEAD, not local uncommitted work.
 # Use --no-verify flag during local dev to skip this check.
-INSTALL_SH_PIN="cf9f030e9cc93cb3e2c50ab1c24a63a93797d32a489d1e4dc924d42bcfa8f612"
+INSTALL_SH_PIN="1b59a15b91846955948aa3f67841435f9f96b72007603872b377b12aa478b032"
 
 _verify_and_exec() {
   local _tmp=$(mktemp)
@@ -257,7 +257,7 @@ echo ""
 
 # ─── Add marketplace ───────────────────────────────────────────────
 echo "📦 Adding Kalera marketplace..."
-_mkt_err=$(claude plugin marketplace add 3d-era/kalera-claude-code 2>&1)
+_mkt_err=$(claude plugin marketplace add kalera-claude-code 2>&1)
 _mkt_rc=$?
 if [[ $_mkt_rc -ne 0 ]]; then
   echo "   ⚠️  Marketplace add failed (rc=$_mkt_rc): $_mkt_err"
@@ -268,7 +268,7 @@ fi
 
 # ─── Install ECC ───────────────────────────────────────────────────
 echo "⚙️  Installing kalera-claude-code..."
-_ecc1_err=$(claude plugin install kalera-claude-code@3d-era/kalera-claude-code 2>&1)
+_ecc1_err=$(claude plugin install kalera-claude-code@kalera-claude-code 2>&1)
 _ecc1_rc=$?
 
 if [[ $_ecc1_rc -eq 0 ]]; then
@@ -286,7 +286,7 @@ fi
 
 # ─── Install Munin ─────────────────────────────────────────────────
 echo "🧠 Installing Munin memory plugin..."
-_mun_err=$(claude plugin install munin-claude-code@3d-era/kalera-claude-code 2>&1)
+_mun_err=$(claude plugin install munin-claude-code@kalera-claude-code 2>&1)
 _mun_rc=$?
 if [[ $_mun_rc -ne 0 ]]; then
   # Fallback: try munin-ecosystem marketplace (where it was previously published)
