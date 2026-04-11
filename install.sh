@@ -1,19 +1,26 @@
 #!/usr/bin/env bash
-# Kalera Claude Code — One-Command Installer
-# Installs everything-claude-code + Munin memory system into Claude Code
+# Kalera Claude Code — One-Command Installer (Linux/macOS)
+# Installs kalera-claude-code + Munin memory system into Claude Code
 #
-# Usage:
+# Usage (Linux/macOS):
 #   bash -c "$(curl -fsSL https://raw.githubusercontent.com/3d-era/kalera-claude-code/main/install.sh)"
+#   git clone https://github.com/3d-era/kalera-claude-code.git && cd kalera-claude-code && ./install.sh
 #
-# Or clone first:
-#   git clone https://github.com/3d-era/kalera-claude-code.git
-#   cd kalera-claude-code && ./install.sh
+# Usage (Windows):
+#   powershell -ExecutionPolicy Bypass -File install.ps1
+#   powershell -ExecutionPolicy Bypass -File install.ps1 -Components "languages/typescript,security"
 #
 # Flags:
-#   --yes         Skip all prompts, apply all auto-fix actions
-#   --dry-run     Show what would be done without making changes
-#   --verbose     Print every command as it runs
-#   --no-verify   Skip integrity check (for local dev/testing only)
+#   --yes           Skip all prompts, apply all auto-fix actions
+#   --dry-run       Show what would be done without making changes
+#   --verbose       Print every command as it runs
+#   --no-verify     Skip integrity check (for local dev/testing only)
+#   --select        Interactive TUI — pick components and languages
+#   --components X  Capability groups and/or languages (e.g. security,tdd,languages/typescript)
+#
+# Groups:    security | codereview | tdd | performance | database | devops | documentation | workflow
+# Languages: languages/typescript | languages/golang | languages/rust | ... (see --select for full list)
+# all:       install everything (same as no flags)
 
 # ─── Integrity verification (MITM mitigation for curl|bash) ───────
 # If the script body was piped in, re-download and verify SHA256 before running.
@@ -21,13 +28,16 @@
 #
 # WORKFLOW TO UPDATE PIN (after any change to this script):
 #   1. Edit install.sh locally
-#   2. sha256sum install.sh | cut -d' ' -f1  → paste into INSTALL_SH_PIN
+#   2. sha256sum install.sh | cut -d' ' -f1  → paste into INSTALL_SH_PIN (bash)
+#      sha256sum install.ps1 | cut -d' ' -f1 → paste into $INSTALL_SH_PIN (PowerShell)
 #   3. git commit + git push
-#   4. Verify remote: curl -fsSL https://raw.githubusercontent.com/3d-era/kalera-claude-code/main/install.sh | sha256sum
+#   4. Verify remote:
+#        curl -fsSL https://raw.githubusercontent.com/3d-era/kalera-claude-code/main/install.sh | sha256sum
+#        (PowerShell) [System.Security.Cryptography.SHA256]::Create().ComputeHash([System.IO.File]::ReadAllBytes("install.ps1")) | ForEach-Object { $_.ToString("x2") } -join ""
 #
 # IMPORTANT: Pin = SHA256 of the remote HEAD, not local uncommitted work.
 # Use --no-verify flag during local dev to skip this check.
-INSTALL_SH_PIN="1b59a15b91846955948aa3f67841435f9f96b72007603872b377b12aa478b032"
+INSTALL_SH_PIN="71a9c9ca0d170036ca1b07adcd0006137c6ed095d55bd0cb6e7c42b6ebc4c0bf"
 
 _verify_and_exec() {
   local _tmp=$(mktemp)
@@ -81,6 +91,148 @@ trap 'echo "Interrupted."; exit 130' INT TERM
 DRY_RUN=false
 VERBOSE=false
 YES_MODE=false
+SELECT_MODE=false
+HAS_COMP=false
+COMP_INPUT=""
+declare -a SELECTED_LANG=()
+declare -A _SELECTED_GROUPS
+
+_parse_components() {
+  local input="$1"
+  [[ -z "$input" ]] && return
+  local _saw_lang=false
+  local _part
+  while [[ -n "$input" ]]; do
+    if [[ "$input" == *,* ]]; then
+      _part="${input%%,*}"
+      input="${input#*,}"
+    else
+      _part="$input"; input=""
+    fi
+    # strip leading/trailing whitespace
+    _part="${_part#"${_part%%[![:space:]]*}"}"
+    _part="${_part%"${_part##*[![:space:]]}"}"
+    [[ -z "$_part" ]] && continue
+
+    case "$_part" in
+      all)
+        HAS_COMP=false; COMP_INPUT=""; SELECTED_LANG=(); return ;;
+      languages/*)
+        _saw_lang=true
+        _lang="${_part#languages/}"
+        _lang="${_lang#"${_lang%%[![:space:]]*}"}"
+        _lang="${_lang%"${_lang##*[![:space:]]}"}"
+        [[ -n "$_lang" ]] && _add_lang "$_lang" ;;
+      *)
+        _SELECTED_GROUPS["$_part"]=1 ;;
+    esac
+  done
+  # if only groups were specified (no languages/*), select all langs
+  if ! $_saw_lang && [[ ${#SELECTED_LANG[@]} -eq 0 ]]; then
+    SELECTED_LANG=(typescript python golang java kotlin cpp rust swift php dart)
+  fi
+  HAS_COMP=true
+}
+
+_add_lang() {
+  for _l in "${SELECTED_LANG[@]}"; do
+    [[ "$_l" == "$1" ]] && return
+  done
+  SELECTED_LANG+=("$1")
+}
+
+_select_components() {
+  echo ""
+  echo "🧩 Component Selection"
+  echo "─────────────────────"
+  echo "  [a] All (install everything)"
+  echo "  [s] Security          — agents + rules for security scanning"
+  echo "  [c] Code Review       — review agents for all languages"
+  echo "  [t] TDD               — test-driven development workflow"
+  echo "  [p] Performance       — optimization and profiling agents"
+  echo "  [d] Database          — SQL patterns, migrations, JPA"
+  echo "  [o] DevOps            — Docker, deployment, CI/CD"
+  echo "  [w] Documentation     — doc generation, README helpers"
+  echo "  [k] Workflow          — PR workflow, autonomous loops"
+  echo ""
+  echo "  [m] Languages         — pick specific language rulesets"
+  echo ""
+
+  local _done=false
+  while ! $_done; do
+    printf "Select components (e.g. s,c,t or a for all): "
+    read -r _resp
+    _resp="${_resp#"${_resp%%[![:space:]]*}"}"
+    _resp="${_resp%"${_resp##*[![:space:]]}"}"
+    [[ -z "$_resp" ]] && continue
+
+    if [[ "$_resp" == a ]]; then
+      HAS_COMP=false; COMP_INPUT=""; _done=true; continue
+    fi
+
+    local _i; _i=0
+    while [[ $_i -lt ${#_resp} ]]; do
+      _c="${_resp:_i:1}"
+      case "$_c" in
+        s) _SELECTED_GROUPS[security]=1 ;;
+        c) _SELECTED_GROUPS[codereview]=1 ;;
+        t) _SELECTED_GROUPS[tdd]=1 ;;
+        p) _SELECTED_GROUPS[performance]=1 ;;
+        d) _SELECTED_GROUPS[database]=1 ;;
+        o) _SELECTED_GROUPS[devops]=1 ;;
+        w) _SELECTED_GROUPS[documentation]=1 ;;
+        k) _SELECTED_GROUPS[workflow]=1 ;;
+        m)
+          _select_languages
+          ;;
+        *) printf "  Unknown option '%s'\n" "$_c" ;;
+      esac
+      _i=$((_i + 1))
+    done
+    HAS_COMP=true
+    _done=true
+  done
+}
+
+_select_languages() {
+  echo ""
+  echo "🌐 Language Rulesets"
+  echo "─────────────────────"
+  local _all_langs=(typescript python golang java kotlin cpp rust swift php dart)
+  local _i
+  for _i in "${!_all_langs[@]}"; do
+    printf "  [%2d] %s\n" "$((_i + 1))" "${_all_langs[_i]}"
+  done
+  echo ""
+  printf "Select languages (e.g. 1,3,5 or 0 for all): "
+  read -r _resp
+  _resp="${_resp#"${_resp%%[![:space:]]*}"}"
+  _resp="${_resp%"${_resp##*[![:space:]]}"}"
+  [[ -z "$_resp" ]] && return
+
+  if [[ "$_resp" == 0 ]]; then
+    SELECTED_LANG=(typescript python golang java kotlin cpp rust swift php dart)
+    return
+  fi
+
+  local _new_lang=()
+  local _input="$_resp"
+  while [[ -n "$_input" ]]; do
+    if [[ "$_input" == *,* ]]; then
+      _tok="${_input%%,*}"
+      _input="${_input#*,}"
+    else
+      _tok="$_input"; _input=""
+    fi
+    _tok="${_tok#"${_tok%%[![:space:]]*}"}"
+    _tok="${_tok%"${_tok##*[![:space:]]}"}"
+    [[ -z "$_tok" ]] && continue
+    _idx=$((_tok - 1))
+    if [[ $_idx -ge 0 ]] && [[ $_idx -lt ${#_all_langs[@]} ]]; then
+      _add_lang "${_all_langs[_idx]}"
+    fi
+  done
+}
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -88,9 +240,15 @@ while [[ $# -gt 0 ]]; do
     --verbose)    VERBOSE=true; shift ;;
     --yes|-y)     YES_MODE=true; shift ;;
     --no-verify)  NO_VERIFY=true; shift ;;
+    --select)     SELECT_MODE=true; shift ;;
+    --components)
+      if [[ -z "${2:-}" ]]; then
+        echo "❌ --components requires an argument" >&2; exit 1
+      fi
+      COMP_INPUT="$2"; HAS_COMP=true; shift 2 ;;
     *)
       echo "Unknown flag: $1" >&2
-      echo "Usage: $0 [--dry-run] [--verbose] [--yes]" >&2
+      echo "Usage: $0 [--dry-run] [--verbose] [--yes] [--select] [--components GROUPS]" >&2
       exit 1
       ;;
   esac
@@ -156,6 +314,20 @@ echo ""
 echo "🚀 Kalera Claude Code — Installer"
 echo "=================================="
 echo ""
+
+# ─── Component selection ──────────────────────────────────────────
+if [[ "$SELECT_MODE" == true ]]; then
+  _select_components
+elif [[ "$HAS_COMP" == true ]]; then
+  _parse_components "$COMP_INPUT"
+fi
+if [[ "$HAS_COMP" == true ]] && [[ ${#SELECTED_LANG[@]} -gt 0 ]]; then
+  _lang_list=$(IFS=,; echo "${SELECTED_LANG[*]}")
+  echo "📦 Selected languages: $_lang_list"
+fi
+if [[ "$HAS_COMP" == true ]] && [[ ${#_SELECTED_GROUPS[@]} -gt 0 ]]; then
+  echo "📦 Selected groups: ${!_SELECTED_GROUPS[*]}"
+fi
 
 # ─── Check Claude CLI ───────────────────────────────────────────────
 if ! command -v claude &>/dev/null; then
@@ -330,7 +502,11 @@ if [[ -d "$REPO_DIR/rules" ]]; then
     echo "   ✅ rules/common/"
   fi
 
-  for lang in typescript python golang java kotlin cpp rust swift php dart; do
+  # Default to all languages if nothing selected
+  if [[ ${#SELECTED_LANG[@]} -eq 0 ]]; then
+    SELECTED_LANG=(typescript python golang java kotlin cpp rust swift php dart)
+  fi
+  for lang in "${SELECTED_LANG[@]}"; do
     if [[ -d "$REPO_DIR/rules/$lang" ]]; then
       mkdir -p ~/.claude/rules/$lang
       for _f in "$REPO_DIR/rules/$lang"/*; do

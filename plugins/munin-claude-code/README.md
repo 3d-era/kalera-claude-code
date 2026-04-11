@@ -1,4 +1,4 @@
-# Munin Memory System
+# Munin for Claude Code
 
 > **Munin** is a long-term memory system for developers. Every time you work with Claude Code, Munin remembers your context, decisions, bugs, and solutions — so you never have to repeat yourself.
 
@@ -77,14 +77,14 @@ MUNIN_PROJECT=proj_your_project_id
 The easiest way — Claude Code handles everything automatically:
 
 ```bash
-# Add the Kalera plugin marketplace
-/plugin marketplace add kalera-cc
+# Add the Munin plugin marketplace
+/plugin marketplace add 3d-era/munin-for-agents
 
-# Install the Munin memory plugin
-/plugin install munin-claude-code@kalera-cc
+# Install the Munin plugin
+/plugin install munin-claude-code@munin-ecosystem
 ```
 
-That's it! Claude Code will pull the plugin directly from GitHub and set it up. To update later, run `/plugin update munin-claude-code@kalera-cc`.
+That's it! Claude Code will pull the plugin directly from GitHub and set it up. To update later, run `/plugin update munin-claude-code@munin-ecosystem`.
 
 **For development (from local repo):**
 ```bash
@@ -186,12 +186,6 @@ Tag as `architecture` + `decision`, include timeline/version
 | 🐛 **Issues** | [github.com/3d-era/munin-for-agents/issues](https://github.com/3d-era/munin-for-agents/issues) |
 | 📦 **npm** | [npmjs.com/package/@kalera/munin-claude](https://npmjs.com/package/@kalera/munin-claude)       |
 | 🔌 **Gemini Extension** | [github.com/3d-era/munin-gemini-extension](https://github.com/3d-era/munin-gemini-extension)   |
-
----
-
-## Credits
-
-Munin Memory System is a fork of [3d-era/munin-for-agents](https://github.com/3d-era/munin-for-agents).
 
 ---
 

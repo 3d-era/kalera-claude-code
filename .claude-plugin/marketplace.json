@@ -14,7 +14,7 @@
       "name": "kalera-claude-code",
       "source": "./",
       "description": "Battle-tested Claude Code plugin — 31 agents, 142 skills, 50 commands, and production-ready hooks. Built on affaan-m/everything-claude-code (50K+ stars, Anthropic hackathon winner). Covers TDD, security scanning, code review, multi-language support, and continuous learning.",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "author": {
         "name": "Kalera",
         "email": "kal@kalera.app"
@@ -52,7 +52,7 @@
       "name": "munin-claude-code",
       "source": "./plugins/munin-claude-code",
       "description": "Munin long-term memory system for Claude Code. Automatic context loading at session start, GraphRAG memory search, error catalog, and per-project memory. Powered by munin.kalera.app.",
-      "version": "1.1.1",
+      "version": "1.2.7",
       "author": {
         "name": "Kalera / 3D-Era",
         "email": "kal@kalera.app"
