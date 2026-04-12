@@ -3,7 +3,7 @@
   "name": "kalera-claude-code",
   "description": "The complete Claude Code toolkit — everything-claude-code foundation (battle-tested agents, skills, hooks, rules) + Munin long-term memory system. One installer. Everything you need.",
   "owner": {
-    "name": "Kalera / 3D-Era",
+    "name": "Kalera",
     "email": "kal@kalera.app"
   },
   "metadata": {
@@ -52,9 +52,9 @@
       "name": "munin-claude-code",
       "source": "./plugins/munin-claude-code",
       "description": "Munin long-term memory system for Claude Code. Automatic context loading at session start, GraphRAG memory search, error catalog, and per-project memory. Powered by munin.kalera.app.",
-      "version": "1.2.7",
+      "version": "1.2.8",
       "author": {
-        "name": "Kalera / 3D-Era",
+        "name": "Kalera",
         "email": "kal@kalera.app"
       },
       "homepage": "https://github.com/3d-era/kalera-claude-code",
