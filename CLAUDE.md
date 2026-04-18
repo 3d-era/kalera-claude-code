@@ -7,8 +7,8 @@
 This is a **Claude Code plugin** — install via the marketplace or use components directly.
 
 - **Base**: Everything Claude Code v1.9.0 (by Affaan Mustafa)
-- **Addon**: Munin Memory System v1.1.1 (by Kalera)
-- **Version**: 2.0.0
+- **Addon**: Munin Memory System v1.4.0 (by Kalera)
+- **Version**: 1.4.0
 
 ## Running Tests
 
