@@ -23,26 +23,30 @@
 # all:       install everything (same as no flags)
 
 # ─── Integrity verification (MITM mitigation for curl|bash) ───────
-# If the script body was piped in, re-download and verify SHA256 before running.
-# SHA256 is pinned here — update INSTALL_SH_PIN when install.sh content changes.
+# When the script is piped in, re-download and verify SHA256 before running.
+# SHA256 is computed over the file with the INSTALL_SH_PIN line normalized,
+# so the pin can include itself without a chicken-and-egg problem.
 #
 # WORKFLOW TO UPDATE PIN (after any change to this script):
-#   1. Edit install.sh locally
-#   2. sha256sum install.sh | cut -d' ' -f1  → paste into INSTALL_SH_PIN (bash)
-#      sha256sum install.ps1 | cut -d' ' -f1 → paste into $INSTALL_SH_PIN (PowerShell)
-#   3. git commit + git push
-#   4. Verify remote:
-#        curl -fsSL https://raw.githubusercontent.com/3d-era/kalera-claude-code/main/install.sh | sha256sum
-#        (PowerShell) [System.Security.Cryptography.SHA256]::Create().ComputeHash([System.IO.File]::ReadAllBytes("install.ps1")) | ForEach-Object { $_.ToString("x2") } -join ""
+#   1. Edit install.sh locally.
+#   2. Compute the new pin (use the helper below):
+#        sed 's|^INSTALL_SH_PIN=.*|INSTALL_SH_PIN="PINNED"|' install.sh \
+#          | sha256sum | cut -d' ' -f1
+#   3. Paste the result into INSTALL_SH_PIN below.
+#   4. git commit + git push.
 #
-# IMPORTANT: Pin = SHA256 of the remote HEAD, not local uncommitted work.
-# Use --no-verify flag during local dev to skip this check.
-INSTALL_SH_PIN="71a9c9ca0d170036ca1b07adcd0006137c6ed095d55bd0cb6e7c42b6ebc4c0bf"
+# IMPORTANT: Use --no-verify during local dev to bypass this check.
+INSTALL_SH_PIN="cea8c74daefb4ab199bc592cdb83d1bf6658ad15603365009b57dccef18244f7"
+
+_compute_pin() {
+  # Hash file content with PIN line normalized → pin is self-consistent
+  sed 's|^INSTALL_SH_PIN=.*|INSTALL_SH_PIN="PINNED"|' "$1" | sha256sum | cut -d' ' -f1
+}
 
 _verify_and_exec() {
   local _tmp=$(mktemp)
   curl -fsSL https://raw.githubusercontent.com/3d-era/kalera-claude-code/main/install.sh -o "$_tmp"
-  local _sha=$(sha256sum "$_tmp" 2>/dev/null | cut -d' ' -f1)
+  local _sha=$(_compute_pin "$_tmp")
   if [[ -z "$_sha" ]]; then
     echo "❌ Could not compute SHA256 of downloaded script" >&2
     rm -f "$_tmp"
@@ -94,8 +98,16 @@ YES_MODE=false
 SELECT_MODE=false
 HAS_COMP=false
 COMP_INPUT=""
-declare -a SELECTED_LANG=()
-declare -A _SELECTED_GROUPS
+SELECTED_LANG=()
+# Space-separated list of selected groups (compatible with macOS bash 3.2 — no associative arrays)
+_SELECTED_GROUPS=""
+
+_add_group() {
+  case " $_SELECTED_GROUPS " in
+    *" $1 "*) ;;
+    *) _SELECTED_GROUPS="${_SELECTED_GROUPS:+$_SELECTED_GROUPS }$1" ;;
+  esac
+}
 
 _parse_components() {
   local input="$1"
@@ -124,7 +136,7 @@ _parse_components() {
         _lang="${_lang%"${_lang##*[![:space:]]}"}"
         [[ -n "$_lang" ]] && _add_lang "$_lang" ;;
       *)
-        _SELECTED_GROUPS["$_part"]=1 ;;
+        _add_group "$_part" ;;
     esac
   done
   # if only groups were specified (no languages/*), select all langs
@@ -174,14 +186,14 @@ _select_components() {
     while [[ $_i -lt ${#_resp} ]]; do
       _c="${_resp:_i:1}"
       case "$_c" in
-        s) _SELECTED_GROUPS[security]=1 ;;
-        c) _SELECTED_GROUPS[codereview]=1 ;;
-        t) _SELECTED_GROUPS[tdd]=1 ;;
-        p) _SELECTED_GROUPS[performance]=1 ;;
-        d) _SELECTED_GROUPS[database]=1 ;;
-        o) _SELECTED_GROUPS[devops]=1 ;;
-        w) _SELECTED_GROUPS[documentation]=1 ;;
-        k) _SELECTED_GROUPS[workflow]=1 ;;
+        s) _add_group security ;;
+        c) _add_group codereview ;;
+        t) _add_group tdd ;;
+        p) _add_group performance ;;
+        d) _add_group database ;;
+        o) _add_group devops ;;
+        w) _add_group documentation ;;
+        k) _add_group workflow ;;
         m)
           _select_languages
           ;;
@@ -325,8 +337,8 @@ if [[ "$HAS_COMP" == true ]] && [[ ${#SELECTED_LANG[@]} -gt 0 ]]; then
   _lang_list=$(IFS=,; echo "${SELECTED_LANG[*]}")
   echo "📦 Selected languages: $_lang_list"
 fi
-if [[ "$HAS_COMP" == true ]] && [[ ${#_SELECTED_GROUPS[@]} -gt 0 ]]; then
-  echo "📦 Selected groups: ${!_SELECTED_GROUPS[*]}"
+if [[ "$HAS_COMP" == true ]] && [[ -n "$_SELECTED_GROUPS" ]]; then
+  echo "📦 Selected groups: $_SELECTED_GROUPS"
 fi
 
 # ─── Check Claude CLI ───────────────────────────────────────────────
@@ -362,10 +374,14 @@ if [[ "$HAS_OLD_ECC" == true ]]; then
   echo ""
   _choice=$(ask "  [1] Auto-fix  [2] Skip (keep old)")
   if resolve "$_choice"; then
-    echo "   → Uninstalling old version..."
-    _err=$(claude plugin uninstall everything-claude-code@affaan-m/everything-claude-code 2>&1) && \
-      echo "   ✅ Old ECC removed." || \
-      echo "   ⚠️  Uninstall warning: $_err"
+    if [[ "$DRY_RUN" == true ]]; then
+      echo "   [dry-run] would: claude plugin uninstall everything-claude-code@affaan-m/everything-claude-code"
+    else
+      echo "   → Uninstalling old version..."
+      _err=$(claude plugin uninstall everything-claude-code@affaan-m/everything-claude-code 2>&1) && \
+        echo "   ✅ Old ECC removed." || \
+        echo "   ⚠️  Uninstall warning: $_err"
+    fi
   else
     echo "   ⏭  Skipped — old ECC kept."
   fi
@@ -380,10 +396,14 @@ if [[ "$HAS_OLD_MUNIN" == true ]]; then
   echo ""
   _choice=$(ask "  [1] Auto-fix  [2] Skip (keep old)")
   if resolve "$_choice"; then
-    echo "   → Uninstalling old version..."
-    _err=$(claude plugin uninstall munin-claude-code@munin-ecosystem 2>&1) && \
-      echo "   ✅ Old Munin removed." || \
-      echo "   ⚠️  Uninstall warning: $_err"
+    if [[ "$DRY_RUN" == true ]]; then
+      echo "   [dry-run] would: claude plugin uninstall munin-claude-code@munin-ecosystem"
+    else
+      echo "   → Uninstalling old version..."
+      _err=$(claude plugin uninstall munin-claude-code@munin-ecosystem 2>&1) && \
+        echo "   ✅ Old Munin removed." || \
+        echo "   ⚠️  Uninstall warning: $_err"
+    fi
   else
     echo "   ⏭  Skipped — old Munin kept."
   fi
@@ -429,24 +449,27 @@ echo ""
 
 # ─── Add marketplace ───────────────────────────────────────────────
 echo "📦 Adding Kalera marketplace..."
-_mkt_err=$(claude plugin marketplace add kalera-claude-code 2>&1)
-_mkt_rc=$?
-if [[ $_mkt_rc -ne 0 ]]; then
-  echo "   ⚠️  Marketplace add failed (rc=$_mkt_rc): $_mkt_err"
-  if [[ "$DRY_RUN" == false ]]; then
+if [[ "$DRY_RUN" == true ]]; then
+  echo "   [dry-run] would: claude plugin marketplace add 3d-era/kalera-claude-code"
+else
+  _mkt_err=$(claude plugin marketplace add 3d-era/kalera-claude-code 2>&1)
+  _mkt_rc=$?
+  if [[ $_mkt_rc -ne 0 ]]; then
+    echo "   ⚠️  Marketplace add failed (rc=$_mkt_rc): $_mkt_err"
     echo "   → Will attempt direct plugin install anyway..."
   fi
 fi
 
 # ─── Install ECC ───────────────────────────────────────────────────
 echo "⚙️  Installing kalera-claude-code..."
-_ecc1_err=$(claude plugin install kalera-claude-code@kalera-claude-code 2>&1)
-_ecc1_rc=$?
-
-if [[ $_ecc1_rc -eq 0 ]]; then
-  echo "   ✅ kalera-claude-code installed"
+if [[ "$DRY_RUN" == true ]]; then
+  echo "   [dry-run] would: claude plugin install kalera-claude-code@kalera-claude-code"
 else
-  if [[ $_ecc1_rc -eq 2 ]]; then
+  _ecc1_err=$(claude plugin install kalera-claude-code@kalera-claude-code 2>&1)
+  _ecc1_rc=$?
+  if [[ $_ecc1_rc -eq 0 ]]; then
+    echo "   ✅ kalera-claude-code installed"
+  elif [[ $_ecc1_rc -eq 2 ]]; then
     echo "   ❌ Plugin 'kalera-claude-code' not found in marketplace '3d-era/kalera-claude-code'"
   elif [[ $_ecc1_rc -eq 3 ]]; then
     echo "   ❌ Plugin 'kalera-claude-code' already installed — skip or uninstall first"
@@ -458,34 +481,39 @@ fi
 
 # ─── Install Munin ─────────────────────────────────────────────────
 echo "🧠 Installing Munin memory plugin..."
-_mun_err=$(claude plugin install munin-claude-code@kalera-claude-code 2>&1)
-_mun_rc=$?
-if [[ $_mun_rc -ne 0 ]]; then
-  # Fallback: try munin-ecosystem marketplace (where it was previously published)
-  _mun_err2=$(claude plugin install munin-claude-code@munin-ecosystem 2>&1)
-  _mun_rc2=$?
-  if [[ $_mun_rc2 -eq 0 ]]; then
-    _mun_rc=0
-    _mun_err=""
-  else
-    _mun_err="primary marketplace: $_mun_err; fallback marketplace: $_mun_err2"
-  fi
-fi
-_mun_rc=$?
-if [[ $_mun_rc -eq 0 ]]; then
-  echo "   ✅ munin-claude-code installed"
-elif [[ $_mun_rc -eq 2 ]]; then
-  echo "   ❌ Plugin not found on marketplace '3d-era/kalera-claude-code'"
-elif [[ $_mun_rc -eq 3 ]]; then
-  echo "   ❌ Plugin already installed — skip this step or uninstall first"
+if [[ "$DRY_RUN" == true ]]; then
+  echo "   [dry-run] would: claude plugin install munin-claude-code@kalera-claude-code"
 else
-  echo "   ❌ Install failed (rc=$_mun_rc): $_mun_err"
+  _mun_err=$(claude plugin install munin-claude-code@kalera-claude-code 2>&1)
+  _mun_rc=$?
+  if [[ $_mun_rc -ne 0 ]]; then
+    # Fallback: try munin-ecosystem marketplace (where it was previously published)
+    _mun_err2=$(claude plugin install munin-claude-code@munin-ecosystem 2>&1)
+    _mun_rc2=$?
+    if [[ $_mun_rc2 -eq 0 ]]; then
+      _mun_rc=0
+      _mun_err=""
+    else
+      _mun_err="primary marketplace: $_mun_err; fallback marketplace: $_mun_err2"
+    fi
+  fi
+  if [[ $_mun_rc -eq 0 ]]; then
+    echo "   ✅ munin-claude-code installed"
+  elif [[ $_mun_rc -eq 2 ]]; then
+    echo "   ❌ Plugin not found on marketplace '3d-era/kalera-claude-code'"
+  elif [[ $_mun_rc -eq 3 ]]; then
+    echo "   ❌ Plugin already installed — skip this step or uninstall first"
+  else
+    echo "   ❌ Install failed (rc=$_mun_rc): $_mun_err"
+  fi
 fi
 
 # ─── Install rules ────────────────────────────────────────────────
 echo ""
 echo "📋 Installing rules..."
-if [[ -d "$REPO_DIR/rules" ]]; then
+if [[ "$DRY_RUN" == true ]]; then
+  echo "   [dry-run] would: copy rules/common + selected language rulesets to ~/.claude/rules/"
+elif [[ -d "$REPO_DIR/rules" ]]; then
   mkdir -p ~/.claude/rules
 
   if [[ -d "$REPO_DIR/rules/common" ]]; then

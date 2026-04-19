@@ -25,17 +25,36 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference    = 'SilentlyContinue'
 
 # ─── Constants ──────────────────────────────────────────────────────
-$INSTALL_SH_PIN = "2a84e731c2cff252ef2429a71cba2c223bbdf6c3db387075769db6ccb0a2e6c1"
-$REPO_URL       = "https://github.com/3d-era/kalera-claude-code.git"
-$GITHUB_RAW     = "https://raw.githubusercontent.com/3d-era/kalera-claude-code/main/install.ps1"
+# SHA256 is computed over the file with the INSTALL_PS1_PIN line normalized,
+# so the pin can include itself without a chicken-and-egg problem.
+#
+# WORKFLOW TO UPDATE PIN (after any change to this script):
+#   1. Edit install.ps1 locally.
+#   2. PowerShell: $h = (Get-Content install.ps1 -Raw) -replace '\$INSTALL_PS1_PIN\s*=\s*".*"','$INSTALL_PS1_PIN = "PINNED"'
+#                  [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes($h))).Replace("-","").ToLower()
+#      Bash:       sed 's|^\$INSTALL_PS1_PIN.*|$INSTALL_PS1_PIN = "PINNED"|' install.ps1 | sha256sum | cut -d' ' -f1
+#   3. Paste the result into INSTALL_PS1_PIN below.
+#   4. git commit + git push.
+$INSTALL_PS1_PIN = "93f26d2782732f28aa6781c13996547ad6865ce39c7ae000a76a52a28c413418"
+$REPO_URL        = "https://github.com/3d-era/kalera-claude-code.git"
+$GITHUB_RAW      = "https://raw.githubusercontent.com/3d-era/kalera-claude-code/main/install.ps1"
 
 # ─── Helpers ───────────────────────────────────────────────────────
+function Get-NormalizedHash {
+    param([string]$Path)
+    $content = Get-Content $Path -Raw
+    $normalized = $content -replace '(?m)^\$INSTALL_PS1_PIN\s*=\s*".*"', '$INSTALL_PS1_PIN = "PINNED"'
+    $bytes = [Text.Encoding]::UTF8.GetBytes($normalized)
+    $sha   = [Security.Cryptography.SHA256]::Create().ComputeHash($bytes)
+    return ([BitConverter]::ToString($sha) -replace '-', '').ToLower()
+}
+
 function Get-ScriptHash {
     $tmp = [System.IO.Path]::GetTempFileName()
     try {
         $wc = New-Object System.Net.WebClient
         $wc.DownloadFile($GITHUB_RAW, $tmp)
-        $hash = (Get-FileHash -Path $tmp -Algorithm SHA256).Hash.ToLower()
+        $hash = Get-NormalizedHash -Path $tmp
         return @{ Hash = $hash; Path = $tmp }
     }
     catch {
@@ -60,9 +79,9 @@ function Write-Step($msg) {
 if (-not $DryRun) {
     Write-Verbose "Verifying script integrity..."
     $result = Get-ScriptHash
-    if ($result.Hash -ne $INSTALL_SH_PIN) {
+    if ($result.Hash -ne $INSTALL_PS1_PIN) {
         Write-Fail "Script integrity check FAILED (SHA256 mismatch)"
-        Write-Host "   Expected: $INSTALL_SH_PIN" -ForegroundColor Red
+        Write-Host "   Expected: $INSTALL_PS1_PIN" -ForegroundColor Red
         Write-Host "   Got:      $($result.Hash)" -ForegroundColor Red
         Write-Host "   The script may have been tampered with. Aborting." -ForegroundColor Red
         Remove-Item $result.Path -Force -EA SilentlyContinue
@@ -293,9 +312,14 @@ if ($hasOldECC) {
     Write-Host ""
 
     if ($Yes) {
-        Write-Step "  → Uninstalling old version..."
-        claude plugin uninstall everything-claude-code@affaan-m/everything-claude-code 2>&1 | Out-Null
-        Write-Host "   ✅ Old ECC removed." -ForegroundColor Green
+        if ($DryRun) {
+            Write-Host "   [dry-run] would: claude plugin uninstall everything-claude-code@affaan-m/everything-claude-code"
+        }
+        else {
+            Write-Step "  → Uninstalling old version..."
+            claude plugin uninstall everything-claude-code@affaan-m/everything-claude-code 2>&1 | Out-Null
+            Write-Host "   ✅ Old ECC removed." -ForegroundColor Green
+        }
     }
     else {
         Write-Host "   ⏭  Skipped — old ECC kept."
@@ -310,9 +334,14 @@ if ($hasOldMunin) {
     Write-Host ""
 
     if ($Yes) {
-        Write-Step "  → Uninstalling old version..."
-        claude plugin uninstall munin-claude-code@munin-ecosystem 2>&1 | Out-Null
-        Write-Host "   ✅ Old Munin removed." -ForegroundColor Green
+        if ($DryRun) {
+            Write-Host "   [dry-run] would: claude plugin uninstall munin-claude-code@munin-ecosystem"
+        }
+        else {
+            Write-Step "  → Uninstalling old version..."
+            claude plugin uninstall munin-claude-code@munin-ecosystem 2>&1 | Out-Null
+            Write-Host "   ✅ Old Munin removed." -ForegroundColor Green
+        }
     }
     else {
         Write-Host "   ⏭  Skipped — old Munin kept."
@@ -339,11 +368,14 @@ Write-Host ""
 
 # ─── Add marketplace ───────────────────────────────────────────────
 Write-Step "📦 Adding Kalera marketplace..."
-$mktResult = claude plugin marketplace add kalera-claude-code 2>&1
-$mktRc     = $LASTEXITCODE
-if ($mktRc -ne 0) {
-    Write-Info "Marketplace add failed (rc=$mktRc): $mktResult"
-    if (-not $DryRun) {
+if ($DryRun) {
+    Write-Info "[dry-run] would: claude plugin marketplace add 3d-era/kalera-claude-code"
+}
+else {
+    $mktResult = claude plugin marketplace add 3d-era/kalera-claude-code 2>&1
+    $mktRc     = $LASTEXITCODE
+    if ($mktRc -ne 0) {
+        Write-Info "Marketplace add failed (rc=$mktRc): $mktResult"
         Write-Info "Will attempt direct plugin install anyway..."
     }
 }
@@ -399,7 +431,10 @@ if (-not $DryRun) {
 # ─── Install rules ────────────────────────────────────────────────
 Write-Step ""
 Write-Step "📋 Installing rules..."
-if (Test-Path (Join-Path $scriptRoot 'rules')) {
+if ($DryRun) {
+    Write-Info "[dry-run] would: copy rules/common + selected language rulesets to $rulesDest"
+}
+elseif (Test-Path (Join-Path $scriptRoot 'rules')) {
     if (-not (Test-Path $rulesDest)) {
         New-Item -ItemType Directory -Path $rulesDest -Force | Out-Null
     }
