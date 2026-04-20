@@ -456,6 +456,7 @@
         "skills/cost-aware-llm-pipeline",
         "skills/data-scraper-agent",
         "skills/enterprise-agent-ops",
+        "skills/kalera-council",
         "skills/nanoclaw-repl",
         "skills/prompt-optimizer",
         "skills/ralphinho-rfc-pipeline",
