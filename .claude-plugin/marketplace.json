@@ -52,7 +52,7 @@
       "name": "munin-claude-code",
       "source": "./plugins/munin-claude-code",
       "description": "Munin long-term memory system for Claude Code. Automatic context loading at session start, GraphRAG memory search, error catalog, and per-project memory. Powered by munin.kalera.app.",
-      "version": "1.4.2",
+      "version": "1.4.4",
       "author": {
         "name": "Kalera",
         "email": "kal@kalera.app"
