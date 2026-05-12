@@ -491,7 +491,7 @@ if ($DryRun) { Write-Host "   (dry-run — no changes made)" -ForegroundColor Ye
 Write-Host ""
 Write-Host "Next steps:"
 Write-Host "  1. Restart Claude Code"
-Write-Host "  2. Sign up at https://munin.kalera.app (free)"
+Write-Host "  2. Sign up at https://munin.kalera.ai (free)"
 Write-Host "  3. Run: /munin:projectid"
 Write-Host "     → It will show current ID or prompt you to set it"
 Write-Host ""
