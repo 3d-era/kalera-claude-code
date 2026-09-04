@@ -2,6 +2,11 @@
 
 All notable changes to **Kalera Claude Code** are documented here.
 
+## [1.4.5] — 2026-09-05
+
+### Removed
+- **MCP**: `github`, `exa`, `sequential-thinking` no longer bundled in `.mcp.json` — `github` duplicates the `gh` CLI required by the toolkit rules, `exa`/`github` collided with user-scope servers (each one spawned twice), and `sequential-thinking` had no recorded usage. Add any of them back per machine with `claude mcp add`.
+
 ## [2.0.0-kalera] — 2026-04-04
 
 ### Added

@@ -209,16 +209,12 @@ test('.mcp.json has mcpServers object', () => {
   );
 });
 
-test('.mcp.json includes at least github, context7, and exa servers', () => {
+test('.mcp.json bundles no MCP servers (github, exa, sequential-thinking moved to user scope)', () => {
+  // Since 1.4.5 the plugin ships an empty mcpServers map: github duplicates the `gh` CLI
+  // mandated by the toolkit rules, exa/github duplicated user-scope servers, and
+  // sequential-thinking saw no usage. Users add what they need via `claude mcp add`.
   const servers = Object.keys(mcpConfig.mcpServers);
-  assert.ok(servers.includes('github'), 'Expected github MCP server');
-  assert.ok(servers.includes('context7'), 'Expected context7 MCP server');
-  assert.ok(servers.includes('exa'), 'Expected exa MCP server');
-});
-
-test('.mcp.json declares exa as an http MCP server', () => {
-  assert.strictEqual(mcpConfig.mcpServers.exa.type, 'http', 'Expected exa MCP server to declare type=http');
-  assert.strictEqual(mcpConfig.mcpServers.exa.url, 'https://mcp.exa.ai/mcp', 'Expected exa MCP server URL to remain unchanged');
+  assert.deepStrictEqual(servers, [], `Expected no bundled MCP servers, got: ${servers.join(', ')}`);
 });
 
 // ── Codex marketplace file ────────────────────────────────────────────────────
