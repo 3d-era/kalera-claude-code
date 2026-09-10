@@ -2370,6 +2370,15 @@ function runTests() {
       `Should reject unknown keys, got exit ${result.code}. stdout: ${result.stdout}`);
     assert.ok(/additional properties|does not accept/.test(result.stderr),
       `stderr should name the rejected keys, got: ${result.stderr}`);
+
+    // Same top-level rule when "hooks" is the legacy array form.
+    fs.writeFileSync(hooksFile, JSON.stringify({
+      "$schema": "https://json.schemastore.org/claude-code-settings.json",
+      hooks: [{ matcher: 'Write', hooks: [{ type: 'command', command: 'echo ok' }] }]
+    }));
+    const arrayResult = runValidatorWithDir('validate-hooks', 'HOOKS_FILE', hooksFile);
+    assert.strictEqual(arrayResult.code, 1,
+      `Should reject $schema above an array hooks list, got exit ${arrayResult.code}. stdout: ${arrayResult.stdout}`);
     cleanupTestDir(testDir);
   })) passed++; else failed++;
 

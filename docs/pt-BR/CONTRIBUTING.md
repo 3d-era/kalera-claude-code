@@ -240,13 +240,14 @@ hooks/hooks.json
             "type": "command",
             "command": "echo '[Hook] BLOQUEADO: Comando perigoso' && exit 1"
           }
-        ],
-        "description": "Bloquear comandos rm perigosos"
+        ]
       }
     ]
   }
 }
 ```
+
+> O Claude Code aceita apenas as chaves `matcher` e `hooks` em um grupo de hooks (e apenas `description`, `hooks`, `modules`, `surface` no nível superior do arquivo). Qualquer outra chave é registrada como `hooks.json: unknown key ... ignored` a cada início de sessão e rejeitada pelo `npm test`. Coloque o id e a descrição do hook em `hooks/hooks.meta.json` (campos: `event`, `matcher`, `match`, `description`; `match` é uma substring que identifica o comando do grupo de forma única dentro do evento).
 
 ### Sintaxe de Matcher
 

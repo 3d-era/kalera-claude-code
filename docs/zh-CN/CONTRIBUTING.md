@@ -238,13 +238,14 @@ hooks/hooks.json
             "type": "command",
             "command": "echo '[Hook] BLOCKED: Dangerous command' && exit 1"
           }
-        ],
-        "description": "Block dangerous rm commands"
+        ]
       }
     ]
   }
 }
 ```
+
+> Claude Code 只接受 hook 组上的 `matcher` 与 `hooks` 两个键（文件顶层只接受 `description`、`hooks`、`modules`、`surface`）。其他键会在每次会话启动时记录 `hooks.json: unknown key ... ignored` 警告，`npm test` 也会拒绝。请把 hook 的 id 与说明写入 `hooks/hooks.meta.json`（字段：`event`、`matcher`、`match`、`description`；`match` 是能在同一事件内唯一识别该组命令的子串）。
 
 ### 匹配器语法
 
@@ -268,22 +269,19 @@ tool == "Bash" && tool_input.command matches "git push"
 // Block dev servers outside tmux
 {
   "matcher": "tool == \"Bash\" && tool_input.command matches \"npm run dev\"",
-  "hooks": [{"type": "command", "command": "echo 'Use tmux for dev servers' && exit 1"}],
-  "description": "Ensure dev servers run in tmux"
+  "hooks": [{"type": "command", "command": "echo 'Use tmux for dev servers' && exit 1"}]
 }
 
 // Auto-format after editing TypeScript
 {
   "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.tsx?$\"",
-  "hooks": [{"type": "command", "command": "npx prettier --write \"$file_path\""}],
-  "description": "Format TypeScript files after edit"
+  "hooks": [{"type": "command", "command": "npx prettier --write \"$file_path\""}]
 }
 
 // Warn before git push
 {
   "matcher": "tool == \"Bash\" && tool_input.command matches \"git push\"",
-  "hooks": [{"type": "command", "command": "echo '[Hook] Review changes before pushing'"}],
-  "description": "Reminder to review before push"
+  "hooks": [{"type": "command", "command": "echo '[Hook] Review changes before pushing'"}]
 }
 ```
 
@@ -293,7 +291,7 @@ tool == "Bash" && tool_input.command matches "git push"
 * \[ ] 包含清晰的错误/信息消息
 * \[ ] 使用正确的退出代码 (`exit 1` 阻止, `exit 0` 允许)
 * \[ ] 经过充分测试
-* \[ ] 有描述
+* \[ ] 已登记到 `hooks/hooks.meta.json`（`event`、`matcher`、`match`、`description`）
 
 ***
 

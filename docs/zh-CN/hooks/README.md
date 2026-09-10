@@ -156,6 +156,23 @@ interface HookInput {
 
 异步钩子在后台运行。它们不能阻止工具执行。
 
+## Hook 元数据（`hooks.meta.json`）
+
+Claude Code（2.1.267 及以上）在 hook 组上只接受 `matcher` 与 `hooks`，在 `hooks/hooks.json` 顶层只接受 `description`、`hooks`、`modules`、`surface`。其他键会在每次会话启动时记录 `hooks.json: unknown key ... ignored` 警告，`npm test`（`scripts/ci/validate-hooks.js`）也会拒绝。
+
+因此每个组的 id 与说明写在 `hooks/hooks.meta.json` 中，以 hook id 为键：
+
+```json
+"pre:bash:block-no-verify": {
+  "event": "PreToolUse",
+  "matcher": "Bash",
+  "match": "block-no-verify",
+  "description": "Block git hook-bypass flag to protect pre-commit, commit-msg, and pre-push hooks from being skipped"
+}
+```
+
+`match` 是能在同一事件内唯一识别该组命令的子串。若某个组没有条目、条目匹配到零个或多个组、或 `matcher` 发生偏移，`tests/hooks/hooks.test.js` 会失败，所以新增 hook 时请在同一次变更中补上条目。
+
 ## 常用钩子配方
 
 ### 警告 TODO 注释
@@ -166,8 +183,7 @@ interface HookInput {
   "hooks": [{
     "type": "command",
     "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const i=JSON.parse(d);const ns=i.tool_input?.new_string||'';if(/TODO|FIXME|HACK/.test(ns)){console.error('[Hook] New TODO/FIXME added - consider creating an issue')}console.log(d)})\""
-  }],
-  "description": "Warn when adding TODO/FIXME comments"
+  }]
 }
 ```
 
@@ -179,8 +195,7 @@ interface HookInput {
   "hooks": [{
     "type": "command",
     "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const i=JSON.parse(d);const c=i.tool_input?.content||'';const lines=c.split('\\n').length;if(lines>800){console.error('[Hook] BLOCKED: File exceeds 800 lines ('+lines+' lines)');console.error('[Hook] Split into smaller, focused modules');process.exit(2)}console.log(d)})\""
-  }],
-  "description": "Block creation of files larger than 800 lines"
+  }]
 }
 ```
 
@@ -192,8 +207,7 @@ interface HookInput {
   "hooks": [{
     "type": "command",
     "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const i=JSON.parse(d);const p=i.tool_input?.file_path||'';if(/\\.py$/.test(p)){const{execFileSync}=require('child_process');try{execFileSync('ruff',['format',p],{stdio:'pipe'})}catch(e){}}console.log(d)})\""
-  }],
-  "description": "Auto-format Python files with ruff after edits"
+  }]
 }
 ```
 
@@ -205,8 +219,7 @@ interface HookInput {
   "hooks": [{
     "type": "command",
     "command": "node -e \"const fs=require('fs');let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const i=JSON.parse(d);const p=i.tool_input?.file_path||'';if(/src\\/.*\\.(ts|js)$/.test(p)&&!/\\.test\\.|\\.spec\\./.test(p)){const testPath=p.replace(/\\.(ts|js)$/,'.test.$1');if(!fs.existsSync(testPath)){console.error('[Hook] No test file found for: '+p);console.error('[Hook] Expected: '+testPath);console.error('[Hook] Consider writing tests first (/tdd)')}}console.log(d)})\""
-  }],
-  "description": "Remind to create tests when adding new source files"
+  }]
 }
 ```
 

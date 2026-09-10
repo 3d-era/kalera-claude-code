@@ -10,6 +10,8 @@ All notable changes to **Kalera Claude Code** are documented here.
 
 ### Changed
 - Marketplace entry for `kalera-claude-code` now declares the real plugin version (was `2.1.0` while `plugin.json` said `1.4.5`; `claude plugin validate` flagged the mismatch).
+- `CONTRIBUTING.md` (all locales) and `hooks/README.md` no longer show `description` on hook groups and now document `hooks/hooks.meta.json`.
+- `scripts/ci/validate-hooks.js` mirrors Claude Code's top-level allow-list exactly (`description`, `hooks`, `modules`, `surface`) and also checks it when `hooks` is the legacy array form.
 
 ## [1.4.5] — 2026-09-05
 

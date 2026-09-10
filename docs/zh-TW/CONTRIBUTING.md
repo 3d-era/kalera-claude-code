@@ -130,10 +130,11 @@ Detailed instructions...
 ```json
 {
   "matcher": "...",
-  "hooks": [...],
-  "description": "What this hook does"
+  "hooks": [...]
 }
 ```
+
+> Claude Code 只接受 hook 群組上的 `matcher` 與 `hooks` 兩個鍵（檔案頂層只接受 `description`、`hooks`、`modules`、`surface`）。其他鍵會在每次工作階段啟動時記錄 `hooks.json: unknown key ... ignored` 警告，`npm test` 也會拒絕。請把 hook 的 id 與說明寫入 `hooks/hooks.meta.json`（欄位：`event`、`matcher`、`match`、`description`；`match` 是能在同一事件內唯一識別該群組命令的子字串）。
 
 ### 5. 測試您的貢獻
 

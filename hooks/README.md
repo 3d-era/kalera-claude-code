@@ -157,6 +157,23 @@ For hooks that should not block the main flow (e.g., background analysis):
 
 Async hooks run in the background. They cannot block tool execution.
 
+## Hook metadata (`hooks.meta.json`)
+
+Claude Code (2.1.267+) accepts only `matcher` and `hooks` on a hook group, and only `description`, `hooks`, `modules`, `surface` at the top level of `hooks/hooks.json`. Any other key is logged as `hooks.json: unknown key ... ignored` at every session start, and `npm test` (`scripts/ci/validate-hooks.js`) rejects it.
+
+Each group's id and human description therefore live in `hooks/hooks.meta.json`, keyed by hook id:
+
+```json
+"pre:bash:block-no-verify": {
+  "event": "PreToolUse",
+  "matcher": "Bash",
+  "match": "block-no-verify",
+  "description": "Block git hook-bypass flag to protect pre-commit, commit-msg, and pre-push hooks from being skipped"
+}
+```
+
+`match` is a substring of the group's command that identifies it uniquely within its event. `tests/hooks/hooks.test.js` fails when a group has no entry, an entry matches zero or several groups, or `matcher` drifts, so add the entry in the same change as the hook.
+
 ## Common Hook Recipes
 
 ### Warn about TODO comments
@@ -167,8 +184,7 @@ Async hooks run in the background. They cannot block tool execution.
   "hooks": [{
     "type": "command",
     "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const i=JSON.parse(d);const ns=i.tool_input?.new_string||'';if(/TODO|FIXME|HACK/.test(ns)){console.error('[Hook] New TODO/FIXME added - consider creating an issue')}console.log(d)})\""
-  }],
-  "description": "Warn when adding TODO/FIXME comments"
+  }]
 }
 ```
 
@@ -180,8 +196,7 @@ Async hooks run in the background. They cannot block tool execution.
   "hooks": [{
     "type": "command",
     "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const i=JSON.parse(d);const c=i.tool_input?.content||'';const lines=c.split('\\n').length;if(lines>800){console.error('[Hook] BLOCKED: File exceeds 800 lines ('+lines+' lines)');console.error('[Hook] Split into smaller, focused modules');process.exit(2)}console.log(d)})\""
-  }],
-  "description": "Block creation of files larger than 800 lines"
+  }]
 }
 ```
 
@@ -193,8 +208,7 @@ Async hooks run in the background. They cannot block tool execution.
   "hooks": [{
     "type": "command",
     "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const i=JSON.parse(d);const p=i.tool_input?.file_path||'';if(/\\.py$/.test(p)){const{execFileSync}=require('child_process');try{execFileSync('ruff',['format',p],{stdio:'pipe'})}catch(e){}}console.log(d)})\""
-  }],
-  "description": "Auto-format Python files with ruff after edits"
+  }]
 }
 ```
 
@@ -206,8 +220,7 @@ Async hooks run in the background. They cannot block tool execution.
   "hooks": [{
     "type": "command",
     "command": "node -e \"const fs=require('fs');let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const i=JSON.parse(d);const p=i.tool_input?.file_path||'';if(/src\\/.*\\.(ts|js)$/.test(p)&&!/\\.test\\.|\\.spec\\./.test(p)){const testPath=p.replace(/\\.(ts|js)$/,'.test.$1');if(!fs.existsSync(testPath)){console.error('[Hook] No test file found for: '+p);console.error('[Hook] Expected: '+testPath);console.error('[Hook] Consider writing tests first (/tdd)')}}console.log(d)})\""
-  }],
-  "description": "Remind to create tests when adding new source files"
+  }]
 }
 ```
 

@@ -272,13 +272,25 @@ hooks/hooks.json
             "type": "command",
             "command": "echo '[Hook] BLOCKED: Dangerous command' && exit 1"
           }
-        ],
-        "description": "Block dangerous rm commands"
+        ]
       }
     ]
   }
 }
 ```
+
+> Claude Code accepts only `matcher` and `hooks` on a hook group (and only `description`, `hooks`, `modules`, `surface` at the top level of the file). Anything else is logged as `hooks.json: unknown key ... ignored` at every session start, and `npm test` rejects it. Put the hook's id and human description in `hooks/hooks.meta.json` instead:
+
+```json
+"pre:bash:block-dangerous-rm": {
+  "event": "PreToolUse",
+  "matcher": "tool == \"Bash\" && tool_input.command matches \"rm -rf /\"",
+  "match": "Dangerous command",
+  "description": "Block dangerous rm commands"
+}
+```
+
+> `match` is a substring of the group's command that identifies it uniquely within its event; `tests/hooks/hooks.test.js` keeps the two files in sync.
 
 ### Matcher Syntax
 
@@ -302,22 +314,19 @@ tool == "Bash" && tool_input.command matches "git push"
 // Block dev servers outside tmux
 {
   "matcher": "tool == \"Bash\" && tool_input.command matches \"npm run dev\"",
-  "hooks": [{"type": "command", "command": "echo 'Use tmux for dev servers' && exit 1"}],
-  "description": "Ensure dev servers run in tmux"
+  "hooks": [{"type": "command", "command": "echo 'Use tmux for dev servers' && exit 1"}]
 }
 
 // Auto-format after editing TypeScript
 {
   "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.tsx?$\"",
-  "hooks": [{"type": "command", "command": "npx prettier --write \"$file_path\""}],
-  "description": "Format TypeScript files after edit"
+  "hooks": [{"type": "command", "command": "npx prettier --write \"$file_path\""}]
 }
 
 // Warn before git push
 {
   "matcher": "tool == \"Bash\" && tool_input.command matches \"git push\"",
-  "hooks": [{"type": "command", "command": "echo '[Hook] Review changes before pushing'"}],
-  "description": "Reminder to review before push"
+  "hooks": [{"type": "command", "command": "echo '[Hook] Review changes before pushing'"}]
 }
 ```
 
@@ -327,7 +336,7 @@ tool == "Bash" && tool_input.command matches "git push"
 - [ ] Includes clear error/info messages
 - [ ] Uses correct exit codes (`exit 1` blocks, `exit 0` allows)
 - [ ] Tested thoroughly
-- [ ] Has description
+- [ ] Has an entry in `hooks/hooks.meta.json` (`event`, `matcher`, `match`, `description`)
 
 ---
 

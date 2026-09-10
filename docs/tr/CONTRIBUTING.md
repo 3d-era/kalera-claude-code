@@ -240,13 +240,14 @@ hooks/hooks.json
             "type": "command",
             "command": "echo '[Hook] ENGELLENDİ: Tehlikeli komut' && exit 1"
           }
-        ],
-        "description": "Tehlikeli rm komutlarını engelle"
+        ]
       }
     ]
   }
 }
 ```
+
+> Claude Code bir hook grubunda yalnızca `matcher` ve `hooks` anahtarlarını kabul eder (dosyanın üst seviyesinde yalnızca `description`, `hooks`, `modules`, `surface`). Diğer anahtarlar her oturum başında `hooks.json: unknown key ... ignored` uyarısı olarak kaydedilir ve `npm test` tarafından reddedilir. Hook'un id'sini ve açıklamasını `hooks/hooks.meta.json` dosyasına yazın (alanlar: `event`, `matcher`, `match`, `description`; `match`, grubun komutunu aynı olay içinde benzersiz olarak tanımlayan bir alt dizedir).
 
 ### Matcher Sözdizimi
 
@@ -270,22 +271,19 @@ tool == "Bash" && tool_input.command matches "git push"
 // tmux dışında dev server'ları engelle
 {
   "matcher": "tool == \"Bash\" && tool_input.command matches \"npm run dev\"",
-  "hooks": [{"type": "command", "command": "echo 'Dev server'lar için tmux kullanın' && exit 1"}],
-  "description": "Dev server'ların tmux'ta çalışmasını sağla"
+  "hooks": [{"type": "command", "command": "echo 'Dev server'lar için tmux kullanın' && exit 1"}]
 }
 
 // TypeScript düzenledikten sonra otomatik formatla
 {
   "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.tsx?$\"",
-  "hooks": [{"type": "command", "command": "npx prettier --write \"$file_path\""}],
-  "description": "TypeScript dosyalarını düzenlemeden sonra formatla"
+  "hooks": [{"type": "command", "command": "npx prettier --write \"$file_path\""}]
 }
 
 // git push öncesi uyar
 {
   "matcher": "tool == \"Bash\" && tool_input.command matches \"git push\"",
-  "hooks": [{"type": "command", "command": "echo '[Hook] Push yapmadan önce değişiklikleri gözden geçirin'"}],
-  "description": "Push öncesi gözden geçirme hatırlatıcısı"
+  "hooks": [{"type": "command", "command": "echo '[Hook] Push yapmadan önce değişiklikleri gözden geçirin'"}]
 }
 ```
 
@@ -295,7 +293,7 @@ tool == "Bash" && tool_input.command matches "git push"
 - [ ] Net hata/bilgi mesajları içeriyor
 - [ ] Doğru çıkış kodlarını kullanıyor (`exit 1` engeller, `exit 0` izin verir)
 - [ ] Kapsamlı test edilmiş
-- [ ] Açıklama içeriyor
+- [ ] `hooks/hooks.meta.json` içinde girdisi var (`event`, `matcher`, `match`, `description`)
 
 ---
 

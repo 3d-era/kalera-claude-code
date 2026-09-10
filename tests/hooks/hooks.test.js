@@ -2044,9 +2044,8 @@ async function runTests() {
 
   if (
     test('hooks.json only uses keys Claude Code accepts (no unknown-key warning at plugin load)', () => {
-      // Claude Code >= 2.1.267 logs `hooks.json: unknown key ... ignored` for anything outside these sets
-      // (it also tolerates top-level `modules`/`surface`, which this plugin does not use).
-      const ALLOWED_TOP_LEVEL = new Set(['description', 'hooks']);
+      // Claude Code >= 2.1.267 logs `hooks.json: unknown key ... ignored` for anything outside these sets.
+      const ALLOWED_TOP_LEVEL = new Set(['description', 'hooks', 'modules', 'surface']);
       const ALLOWED_GROUP = new Set(['matcher', 'hooks']);
       const hooksPath = path.join(__dirname, '..', '..', 'hooks', 'hooks.json');
       const hooks = JSON.parse(fs.readFileSync(hooksPath, 'utf8'));

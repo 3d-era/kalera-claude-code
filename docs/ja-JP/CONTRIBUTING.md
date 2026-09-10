@@ -241,13 +241,14 @@ hooks/hooks.json
             "type": "command",
             "command": "echo '[Hook] BLOCKED: Dangerous command' && exit 1"
           }
-        ],
-        "description": "危険な rm コマンドをブロック"
+        ]
       }
     ]
   }
 }
 ```
+
+> Claude Code がフックグループで受け付けるキーは `matcher` と `hooks` のみです（ファイルのトップレベルは `description`、`hooks`、`modules`、`surface` のみ）。それ以外のキーはセッション開始のたびに `hooks.json: unknown key ... ignored` として警告され、`npm test` でも拒否されます。フックの id と説明は `hooks/hooks.meta.json` に記載してください（フィールド: `event`、`matcher`、`match`、`description`。`match` は同じイベント内でそのグループのコマンドを一意に特定できる部分文字列です）。
 
 ### マッチャー構文
 
@@ -271,22 +272,19 @@ tool == "Bash" && tool_input.command matches "git push"
 // tmux の外で開発サーバーをブロック
 {
   "matcher": "tool == \"Bash\" && tool_input.command matches \"npm run dev\"",
-  "hooks": [{"type": "command", "command": "echo 'Use tmux for dev servers' && exit 1"}],
-  "description": "開発サーバーが tmux で実行されることを確認"
+  "hooks": [{"type": "command", "command": "echo 'Use tmux for dev servers' && exit 1"}]
 }
 
 // TypeScript 編集後に自動フォーマット
 {
   "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.tsx?$\"",
-  "hooks": [{"type": "command", "command": "npx prettier --write \"$file_path\""}],
-  "description": "編集後に TypeScript ファイルをフォーマット"
+  "hooks": [{"type": "command", "command": "npx prettier --write \"$file_path\""}]
 }
 
 // git push 前に警告
 {
   "matcher": "tool == \"Bash\" && tool_input.command matches \"git push\"",
-  "hooks": [{"type": "command", "command": "echo '[Hook] Review changes before pushing'"}],
-  "description": "プッシュ前に変更をレビューするリマインダー"
+  "hooks": [{"type": "command", "command": "echo '[Hook] Review changes before pushing'"}]
 }
 ```
 
@@ -296,7 +294,7 @@ tool == "Bash" && tool_input.command matches "git push"
 - [ ] 明確なエラー/情報メッセージを含む
 - [ ] 正しい終了コードを使用（`exit 1`はブロック、`exit 0`は許可）
 - [ ] 徹底的にテスト済み
-- [ ] 説明を含む
+- [ ] `hooks/hooks.meta.json` にエントリを追加済み（`event`、`matcher`、`match`、`description`）
 
 ---
 

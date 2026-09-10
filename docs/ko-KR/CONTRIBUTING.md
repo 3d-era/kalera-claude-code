@@ -238,13 +238,14 @@ hooks/hooks.json
             "type": "command",
             "command": "echo '[Hook] BLOCKED: Dangerous command' && exit 1"
           }
-        ],
-        "description": "위험한 rm 명령 차단"
+        ]
       }
     ]
   }
 }
 ```
+
+> Claude Code는 훅 그룹에서 `matcher`와 `hooks` 키만 허용합니다(파일 최상위에서는 `description`, `hooks`, `modules`, `surface`만 허용). 그 외 키는 세션을 시작할 때마다 `hooks.json: unknown key ... ignored` 경고로 기록되며 `npm test`에서도 거부됩니다. 훅의 id와 설명은 `hooks/hooks.meta.json`에 작성하세요(필드: `event`, `matcher`, `match`, `description`. `match`는 같은 이벤트 안에서 해당 그룹의 명령을 유일하게 식별하는 부분 문자열입니다).
 
 ### Matcher 문법
 
@@ -268,22 +269,19 @@ tool == "Bash" && tool_input.command matches "git push"
 // tmux 밖 dev 서버 차단
 {
   "matcher": "tool == \"Bash\" && tool_input.command matches \"npm run dev\"",
-  "hooks": [{"type": "command", "command": "echo '개발 서버는 tmux에서 실행하세요' && exit 1"}],
-  "description": "dev 서버를 tmux에서 실행하도록 강제"
+  "hooks": [{"type": "command", "command": "echo '개발 서버는 tmux에서 실행하세요' && exit 1"}]
 }
 
 // TypeScript 편집 후 자동 포맷
 {
   "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.tsx?$\"",
-  "hooks": [{"type": "command", "command": "npx prettier --write \"$file_path\""}],
-  "description": "TypeScript 파일 편집 후 포맷"
+  "hooks": [{"type": "command", "command": "npx prettier --write \"$file_path\""}]
 }
 
 // git push 전 경고
 {
   "matcher": "tool == \"Bash\" && tool_input.command matches \"git push\"",
-  "hooks": [{"type": "command", "command": "echo '[Hook] push 전에 변경사항을 다시 검토하세요'"}],
-  "description": "push 전 검토 리마인더"
+  "hooks": [{"type": "command", "command": "echo '[Hook] push 전에 변경사항을 다시 검토하세요'"}]
 }
 ```
 
@@ -293,7 +291,7 @@ tool == "Bash" && tool_input.command matches "git push"
 - [ ] 명확한 오류/정보 메시지 포함
 - [ ] 올바른 종료 코드 사용 (`exit 1`은 차단, `exit 0`은 허용)
 - [ ] 충분한 테스트 완료
-- [ ] 설명 포함
+- [ ] `hooks/hooks.meta.json`에 항목 추가됨(`event`, `matcher`, `match`, `description`)
 
 ---
 

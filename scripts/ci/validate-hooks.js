@@ -33,7 +33,7 @@ const VALID_EVENTS = [
 const VALID_HOOK_TYPES = ['command', 'http', 'prompt', 'agent'];
 // Claude Code (>= 2.1.267) logs `hooks.json: unknown key ... ignored` at every session start for
 // keys outside these lists, so they are rejected here instead of reaching users as a warning.
-const ALLOWED_TOP_LEVEL_KEYS = ['description', 'hooks'];
+const ALLOWED_TOP_LEVEL_KEYS = ['description', 'hooks', 'modules', 'surface'];
 const ALLOWED_MATCHER_KEYS = ['matcher', 'hooks'];
 const EVENTS_WITHOUT_MATCHER = new Set(['UserPromptSubmit', 'Notification', 'Stop', 'SubagentStop']);
 
@@ -176,7 +176,8 @@ function validateHooks() {
   let hasErrors = false;
   let totalMatchers = 0;
 
-  if (data.hooks && typeof data.hooks === 'object' && !Array.isArray(data.hooks)) {
+  // Wrapped form ({ hooks: {...} } or { hooks: [...] }): the top level is the plugin file itself.
+  if (data.hooks && typeof data.hooks === 'object') {
     if (validateKnownKeys(data, ALLOWED_TOP_LEVEL_KEYS, 'hooks.json top level')) {
       hasErrors = true;
     }
