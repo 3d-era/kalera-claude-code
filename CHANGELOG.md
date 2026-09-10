@@ -5,6 +5,7 @@ All notable changes to **Kalera Claude Code** are documented here.
 ## [1.4.6] — 2026-09-10
 
 ### Fixed
+- **MCP health check**: HTTP `401`/`403` from the anonymous pre-flight probe now count as healthy. OAuth-protected HTTP MCP servers reject that probe by design while the real tool call authenticates with the session's stored token, so the hook was blocking working servers. (Ported from a hot patch that had only lived in the installed plugin copy.)
 - **Hooks**: `hooks/hooks.json` no longer carries `$schema` at the top level or `description`/`id` on hook groups. Claude Code 2.1.267 validates plugin hook files and logged `hooks.json: unknown keys "$schema", "description" in hooks.PreToolUse[0], ... and 56 more ignored` at every session start. Hook ids and descriptions moved to `hooks/hooks.meta.json`; `schemas/hooks.schema.json` now rejects those keys so they cannot come back.
 - **Munin plugin**: dropped the dead top-level `configuration` block from `plugins/munin-claude-code/hooks/hooks.json` (same Claude Code warning; nothing read it). Mirrors `3d-era/munin-for-agents`.
 
