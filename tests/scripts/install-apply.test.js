@@ -370,7 +370,7 @@ function runTests() {
       const normSep = (s) => s.replace(/\\/g, '/');
       const expectedFragment = normSep(path.join(claudeRoot, 'scripts', 'hooks', 'auto-tmux-dev.js'));
 
-      const autoTmuxEntry = settings.hooks.PreToolUse.find(entry => entry.id === 'pre:bash:auto-tmux-dev');
+      const autoTmuxEntry = settings.hooks.PreToolUse.find(entry => typeof entry.hooks?.[0]?.command === 'string' && entry.hooks[0].command.includes('auto-tmux-dev.js'));
       assert.ok(autoTmuxEntry, 'settings.json should include the auto tmux hook');
       assert.ok(
         normSep(autoTmuxEntry.hooks[0].command).includes(expectedFragment),
@@ -381,7 +381,7 @@ function runTests() {
         'settings.json should not retain CLAUDE_PLUGIN_ROOT placeholders after install'
       );
 
-      const installedAutoTmuxEntry = installedHooks.hooks.PreToolUse.find(entry => entry.id === 'pre:bash:auto-tmux-dev');
+      const installedAutoTmuxEntry = installedHooks.hooks.PreToolUse.find(entry => typeof entry.hooks?.[0]?.command === 'string' && entry.hooks[0].command.includes('auto-tmux-dev.js'));
       assert.ok(installedAutoTmuxEntry, 'hooks/hooks.json should include the auto tmux hook');
       assert.ok(
         normSep(installedAutoTmuxEntry.hooks[0].command).includes(expectedFragment),

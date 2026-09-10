@@ -137,19 +137,18 @@
           "items": {
             "$ref": "#/$defs/hookItem"
           }
-        },
-        "description": {
-          "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     }
   },
   "oneOf": [
     {
       "type": "object",
       "properties": {
-        "$schema": {
-          "type": "string"
+        "description": {
+          "type": "string",
+          "description": "Optional plugin-level note. Claude Code accepts only this key and \"hooks\" at the top level of a plugin hooks.json."
         },
         "hooks": {
           "type": "object",
@@ -185,7 +184,8 @@
       },
       "required": [
         "hooks"
-      ]
+      ],
+      "additionalProperties": false
     },
     {
       "type": "array",

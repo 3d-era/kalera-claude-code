@@ -2335,7 +2335,6 @@ function runTests() {
     // The production hooks.json uses this wrapped format — { hooks: { ... } }
     // data.hooks is the object with event types, not data itself
     fs.writeFileSync(hooksFile, JSON.stringify({
-      "$schema": "https://json.schemastore.org/claude-code-settings.json",
       hooks: {
         PreToolUse: [{ matcher: 'Write', hooks: [{ type: 'command', command: 'echo ok' }] }],
         PostToolUse: [{ matcher: 'Read', hooks: [{ type: 'command', command: 'echo done' }] }]
@@ -2347,6 +2346,30 @@ function runTests() {
       `Should pass wrapped hooks format, got exit ${result.code}. stderr: ${result.stderr}`);
     assert.ok(result.stdout.includes('Validated 2'),
       `Should validate 2 matchers, got: ${result.stdout}`);
+    cleanupTestDir(testDir);
+  })) passed++; else failed++;
+
+  if (test('rejects keys Claude Code does not accept on hook groups or at top level', () => {
+    const testDir = createTestDir();
+    const hooksFile = path.join(testDir, 'hooks.json');
+    // Claude Code >= 2.1.267 warns `hooks.json: unknown key ... ignored` for these, so the schema must reject them.
+    fs.writeFileSync(hooksFile, JSON.stringify({
+      "$schema": "https://json.schemastore.org/claude-code-settings.json",
+      hooks: {
+        PreToolUse: [{
+          matcher: 'Write',
+          hooks: [{ type: 'command', command: 'echo ok' }],
+          description: 'not allowed on a hook group',
+          id: 'pre:write:not-allowed'
+        }]
+      }
+    }));
+
+    const result = runValidatorWithDir('validate-hooks', 'HOOKS_FILE', hooksFile);
+    assert.strictEqual(result.code, 1,
+      `Should reject unknown keys, got exit ${result.code}. stdout: ${result.stdout}`);
+    assert.ok(/additional properties|does not accept/.test(result.stderr),
+      `stderr should name the rejected keys, got: ${result.stderr}`);
     cleanupTestDir(testDir);
   })) passed++; else failed++;
 

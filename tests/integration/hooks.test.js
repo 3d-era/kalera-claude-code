@@ -179,13 +179,14 @@ function cleanupTestDir(testDir) {
   fs.rmSync(testDir, { recursive: true, force: true });
 }
 
-function getHookCommandByDescription(hooks, lifecycle, descriptionText) {
+function getHookCommandByScript(hooks, lifecycle, scriptToken) {
+  // Hook groups carry only `matcher` + `hooks` (Claude Code rejects other keys),
+  // so identify a group by a token that appears in its command.
   const hookGroup = hooks.hooks[lifecycle]?.find(
-    entry => entry.description && entry.description.includes(descriptionText)
+    entry => typeof entry.hooks?.[0]?.command === 'string' && entry.hooks[0].command.includes(scriptToken)
   );
 
-  assert.ok(hookGroup, `Expected ${lifecycle} hook matching "${descriptionText}"`);
-  assert.ok(hookGroup.hooks?.[0]?.command, `Expected ${lifecycle} hook command for "${descriptionText}"`);
+  assert.ok(hookGroup, `Expected ${lifecycle} hook whose command includes "${scriptToken}"`);
   return hookGroup.hooks[0].command;
 }
 
@@ -274,10 +275,10 @@ async function runTests() {
 
   if (await asyncTest('dev server hook transforms command to tmux session', async () => {
     // Test the auto-tmux dev hook — transforms dev commands to run in tmux
-    const hookCommand = getHookCommandByDescription(
+    const hookCommand = getHookCommandByScript(
       hooks,
       'PreToolUse',
-      'Auto-start dev servers in tmux'
+      'auto-tmux-dev.js'
     );
     const result = await runHookCommand(hookCommand, {
       tool_input: { command: 'npm run dev' }
@@ -400,10 +401,10 @@ async function runTests() {
 
   if (await asyncTest('dev server hook transforms yarn dev to tmux session', async () => {
     // The auto-tmux dev hook transforms dev commands (yarn dev, npm run dev, etc.)
-    const hookCommand = getHookCommandByDescription(
+    const hookCommand = getHookCommandByScript(
       hooks,
       'PreToolUse',
-      'Auto-start dev servers in tmux'
+      'auto-tmux-dev.js'
     );
     const result = await runHookCommand(hookCommand, {
       tool_input: { command: 'yarn dev' }
@@ -420,10 +421,10 @@ async function runTests() {
   })) passed++; else failed++;
 
   if (await asyncTest('MCP health hook blocks unhealthy MCP tool calls through hooks.json', async () => {
-    const hookCommand = getHookCommandByDescription(
+    const hookCommand = getHookCommandByScript(
       hooks,
       'PreToolUse',
-      'Check MCP server health before MCP tool execution'
+      'mcp-health-check.js'
     );
 
     const testDir = createTestDir();
@@ -538,7 +539,7 @@ async function runTests() {
   if (await asyncTest('PostToolUse PR hook extracts PR URL', async () => {
     // Find the PR logging hook
     const prHook = hooks.hooks.PostToolUse.find(h =>
-      h.description && h.description.includes('PR URL')
+      typeof h.hooks?.[0]?.command === 'string' && h.hooks[0].command.includes('post-bash-pr-created.js')
     );
 
     assert.ok(prHook, 'PR hook should exist');

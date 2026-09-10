@@ -2028,13 +2028,66 @@ async function runTests() {
   if (
     test('InsAIts hook is opt-in and scoped to high-signal tool inputs', () => {
       const hooksPath = path.join(__dirname, '..', '..', 'hooks', 'hooks.json');
+      const metaPath = path.join(__dirname, '..', '..', 'hooks', 'hooks.meta.json');
       const hooks = JSON.parse(fs.readFileSync(hooksPath, 'utf8'));
-      const insaitsHook = hooks.hooks.PreToolUse.find(entry => entry.description && entry.description.includes('InsAIts'));
+      const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+      const insaitsHook = hooks.hooks.PreToolUse.find(entry => entry.hooks?.[0]?.command?.includes('insaits-security-wrapper.js'));
 
       assert.ok(insaitsHook, 'Should define an InsAIts PreToolUse hook');
       assert.strictEqual(insaitsHook.matcher, 'Bash|Write|Edit|MultiEdit', 'InsAIts hook should avoid matching every tool');
-      assert.ok(insaitsHook.description.includes('ECC_ENABLE_INSAITS=1'), 'InsAIts hook should document explicit opt-in');
+      assert.ok(meta.hooks['pre:insaits:security']?.description.includes('ECC_ENABLE_INSAITS=1'), 'InsAIts hook metadata should document explicit opt-in');
       assert.ok(insaitsHook.hooks[0].command.includes('insaits-security-wrapper.js'), 'InsAIts hook should execute through the JS wrapper');
+    })
+  )
+    passed++;
+  else failed++;
+
+  if (
+    test('hooks.json only uses keys Claude Code accepts (no unknown-key warning at plugin load)', () => {
+      // Claude Code >= 2.1.267 logs `hooks.json: unknown key ... ignored` for anything outside these sets
+      // (it also tolerates top-level `modules`/`surface`, which this plugin does not use).
+      const ALLOWED_TOP_LEVEL = new Set(['description', 'hooks']);
+      const ALLOWED_GROUP = new Set(['matcher', 'hooks']);
+      const hooksPath = path.join(__dirname, '..', '..', 'hooks', 'hooks.json');
+      const hooks = JSON.parse(fs.readFileSync(hooksPath, 'utf8'));
+
+      const unknownTop = Object.keys(hooks).filter(key => !ALLOWED_TOP_LEVEL.has(key));
+      assert.deepStrictEqual(unknownTop, [], `Unexpected top-level keys in hooks.json: ${unknownTop.join(', ')}`);
+
+      for (const [eventName, groups] of Object.entries(hooks.hooks)) {
+        groups.forEach((group, index) => {
+          const unknown = Object.keys(group).filter(key => !ALLOWED_GROUP.has(key));
+          assert.deepStrictEqual(unknown, [], `Unexpected keys in hooks.${eventName}[${index}]: ${unknown.join(', ')}`);
+        });
+      }
+    })
+  )
+    passed++;
+  else failed++;
+
+  if (
+    test('hooks.meta.json describes every hook group exactly once', () => {
+      const hooksPath = path.join(__dirname, '..', '..', 'hooks', 'hooks.json');
+      const metaPath = path.join(__dirname, '..', '..', 'hooks', 'hooks.meta.json');
+      const hooks = JSON.parse(fs.readFileSync(hooksPath, 'utf8'));
+      const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+
+      const totalGroups = Object.values(hooks.hooks).reduce((sum, groups) => sum + groups.length, 0);
+      const metaEntries = Object.entries(meta.hooks);
+      assert.strictEqual(metaEntries.length, totalGroups, 'hooks.meta.json must have one entry per hook group');
+
+      const claimed = new Set();
+      for (const [id, entry] of metaEntries) {
+        const groups = hooks.hooks[entry.event];
+        assert.ok(Array.isArray(groups), `${id}: unknown event ${entry.event}`);
+        const matches = groups.filter(group => group.hooks?.[0]?.command?.includes(entry.match));
+        assert.strictEqual(matches.length, 1, `${id}: match "${entry.match}" must identify exactly one ${entry.event} group (found ${matches.length})`);
+        assert.strictEqual(matches[0].matcher, entry.matcher, `${id}: matcher drifted from hooks.json`);
+        assert.ok(typeof entry.description === 'string' && entry.description.trim().length > 0, `${id}: description is required`);
+        const key = `${entry.event}:${groups.indexOf(matches[0])}`;
+        assert.ok(!claimed.has(key), `${id}: group already described by another id`);
+        claimed.add(key);
+      }
     })
   )
     passed++;

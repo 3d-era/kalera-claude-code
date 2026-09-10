@@ -1,0 +1,185 @@
+{
+  "description": "Human-facing metadata for hooks/hooks.json. Claude Code (>= 2.1.267) warns about any key other than \"matcher\" and \"hooks\" on a hook group, so hook ids and descriptions live here instead. \"match\" is a substring that identifies the group's command uniquely within its event; tests/hooks/hooks.test.js keeps this file in sync with hooks.json.",
+  "hooks": {
+    "pre:bash:block-no-verify": {
+      "event": "PreToolUse",
+      "matcher": "Bash",
+      "match": "block-no-verify",
+      "description": "Block git hook-bypass flag to protect pre-commit, commit-msg, and pre-push hooks from being skipped"
+    },
+    "pre:bash:auto-tmux-dev": {
+      "event": "PreToolUse",
+      "matcher": "Bash",
+      "match": "auto-tmux-dev.js",
+      "description": "Auto-start dev servers in tmux with directory-based session names"
+    },
+    "pre:bash:tmux-reminder": {
+      "event": "PreToolUse",
+      "matcher": "Bash",
+      "match": "pre-bash-tmux-reminder.js",
+      "description": "Reminder to use tmux for long-running commands"
+    },
+    "pre:bash:git-push-reminder": {
+      "event": "PreToolUse",
+      "matcher": "Bash",
+      "match": "pre-bash-git-push-reminder.js",
+      "description": "Reminder before git push to review changes"
+    },
+    "pre:bash:commit-quality": {
+      "event": "PreToolUse",
+      "matcher": "Bash",
+      "match": "pre-bash-commit-quality.js",
+      "description": "Pre-commit quality check: lint staged files, validate commit message format, detect console.log/debugger/secrets before committing"
+    },
+    "pre:write:doc-file-warning": {
+      "event": "PreToolUse",
+      "matcher": "Write",
+      "match": "doc-file-warning.js",
+      "description": "Doc file warning: warn about non-standard documentation files (exit code 0; warns only)"
+    },
+    "pre:edit-write:suggest-compact": {
+      "event": "PreToolUse",
+      "matcher": "Edit|Write",
+      "match": "suggest-compact.js",
+      "description": "Suggest manual compaction at logical intervals"
+    },
+    "pre:observe:continuous-learning": {
+      "event": "PreToolUse",
+      "matcher": "*",
+      "match": "\"pre:observe\"",
+      "description": "Capture tool use observations for continuous learning"
+    },
+    "pre:insaits:security": {
+      "event": "PreToolUse",
+      "matcher": "Bash|Write|Edit|MultiEdit",
+      "match": "insaits-security-wrapper.js",
+      "description": "Optional InsAIts AI security monitor for Bash/Edit/Write flows. Enable with ECC_ENABLE_INSAITS=1. Requires: pip install insa-its"
+    },
+    "pre:governance-capture": {
+      "event": "PreToolUse",
+      "matcher": "Bash|Write|Edit|MultiEdit",
+      "match": "\"pre:governance-capture\"",
+      "description": "Capture governance events (secrets, policy violations, approval requests). Enable with ECC_GOVERNANCE_CAPTURE=1"
+    },
+    "pre:config-protection": {
+      "event": "PreToolUse",
+      "matcher": "Write|Edit|MultiEdit",
+      "match": "config-protection.js",
+      "description": "Block modifications to linter/formatter config files. Steers agent to fix code instead of weakening configs."
+    },
+    "pre:mcp-health-check": {
+      "event": "PreToolUse",
+      "matcher": "*",
+      "match": "\"pre:mcp-health-check\"",
+      "description": "Check MCP server health before MCP tool execution and block unhealthy MCP calls"
+    },
+    "post:bash:command-log-audit": {
+      "event": "PostToolUse",
+      "matcher": "Bash",
+      "match": "post-bash-command-log.js\" audit",
+      "description": "Audit log all bash commands to ~/.claude/bash-commands.log"
+    },
+    "post:bash:command-log-cost": {
+      "event": "PostToolUse",
+      "matcher": "Bash",
+      "match": "post-bash-command-log.js\" cost",
+      "description": "Cost tracker - log bash tool usage with timestamps"
+    },
+    "post:bash:pr-created": {
+      "event": "PostToolUse",
+      "matcher": "Bash",
+      "match": "post-bash-pr-created.js",
+      "description": "Log PR URL and provide review command after PR creation"
+    },
+    "post:bash:build-complete": {
+      "event": "PostToolUse",
+      "matcher": "Bash",
+      "match": "post-bash-build-complete.js",
+      "description": "Example: async hook for build analysis (runs in background without blocking)"
+    },
+    "post:quality-gate": {
+      "event": "PostToolUse",
+      "matcher": "Edit|Write|MultiEdit",
+      "match": "\"post:quality-gate\"",
+      "description": "Run quality gate checks after file edits"
+    },
+    "post:edit:design-quality-check": {
+      "event": "PostToolUse",
+      "matcher": "Edit|Write|MultiEdit",
+      "match": "design-quality-check.js",
+      "description": "Warn when frontend edits drift toward generic template-looking UI"
+    },
+    "post:edit:accumulator": {
+      "event": "PostToolUse",
+      "matcher": "Edit|Write|MultiEdit",
+      "match": "post-edit-accumulator.js",
+      "description": "Record edited JS/TS file paths for batch format+typecheck at Stop time"
+    },
+    "post:edit:console-warn": {
+      "event": "PostToolUse",
+      "matcher": "Edit",
+      "match": "post-edit-console-warn.js",
+      "description": "Warn about console.log statements after edits"
+    },
+    "post:governance-capture": {
+      "event": "PostToolUse",
+      "matcher": "Bash|Write|Edit|MultiEdit",
+      "match": "\"post:governance-capture\"",
+      "description": "Capture governance events from tool outputs. Enable with ECC_GOVERNANCE_CAPTURE=1"
+    },
+    "post:observe:continuous-learning": {
+      "event": "PostToolUse",
+      "matcher": "*",
+      "match": "\"post:observe\"",
+      "description": "Capture tool use results for continuous learning"
+    },
+    "post:mcp-health-check": {
+      "event": "PostToolUseFailure",
+      "matcher": "*",
+      "match": "\"post:mcp-health-check\"",
+      "description": "Track failed MCP tool calls, mark unhealthy servers, and attempt reconnect"
+    },
+    "stop:format-typecheck": {
+      "event": "Stop",
+      "matcher": "*",
+      "match": "stop-format-typecheck.js",
+      "description": "Batch format (Biome/Prettier) and typecheck (tsc) all JS/TS files edited this response \u2014 runs once at Stop instead of after every Edit"
+    },
+    "stop:check-console-log": {
+      "event": "Stop",
+      "matcher": "*",
+      "match": "check-console-log.js",
+      "description": "Check for console.log in modified files after each response"
+    },
+    "stop:session-end": {
+      "event": "Stop",
+      "matcher": "*",
+      "match": "'stop:session-end'",
+      "description": "Persist session state after each response (Stop carries transcript_path)"
+    },
+    "stop:evaluate-session": {
+      "event": "Stop",
+      "matcher": "*",
+      "match": "evaluate-session.js",
+      "description": "Evaluate session for extractable patterns"
+    },
+    "stop:cost-tracker": {
+      "event": "Stop",
+      "matcher": "*",
+      "match": "cost-tracker.js",
+      "description": "Track token and cost metrics per session"
+    },
+    "stop:desktop-notify": {
+      "event": "Stop",
+      "matcher": "*",
+      "match": "desktop-notify.js",
+      "description": "Send desktop notification (macOS/WSL) with task summary when Claude responds"
+    },
+    "session:end:marker": {
+      "event": "SessionEnd",
+      "matcher": "*",
+      "match": "session-end-marker.js",
+      "description": "Session end lifecycle marker (non-blocking)"
+    }
+  }
+}

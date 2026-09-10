@@ -2,6 +2,15 @@
 
 All notable changes to **Kalera Claude Code** are documented here.
 
+## [1.4.6] — 2026-09-10
+
+### Fixed
+- **Hooks**: `hooks/hooks.json` no longer carries `$schema` at the top level or `description`/`id` on hook groups. Claude Code 2.1.267 validates plugin hook files and logged `hooks.json: unknown keys "$schema", "description" in hooks.PreToolUse[0], ... and 56 more ignored` at every session start. Hook ids and descriptions moved to `hooks/hooks.meta.json`; `schemas/hooks.schema.json` now rejects those keys so they cannot come back.
+- **Munin plugin**: dropped the dead top-level `configuration` block from `plugins/munin-claude-code/hooks/hooks.json` (same Claude Code warning; nothing read it). Mirrors `3d-era/munin-for-agents`.
+
+### Changed
+- Marketplace entry for `kalera-claude-code` now declares the real plugin version (was `2.1.0` while `plugin.json` said `1.4.5`; `claude plugin validate` flagged the mismatch).
+
 ## [1.4.5] — 2026-09-05
 
 ### Removed

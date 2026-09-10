@@ -31,6 +31,10 @@ const VALID_EVENTS = [
   'SessionEnd',
 ];
 const VALID_HOOK_TYPES = ['command', 'http', 'prompt', 'agent'];
+// Claude Code (>= 2.1.267) logs `hooks.json: unknown key ... ignored` at every session start for
+// keys outside these lists, so they are rejected here instead of reaching users as a warning.
+const ALLOWED_TOP_LEVEL_KEYS = ['description', 'hooks'];
+const ALLOWED_MATCHER_KEYS = ['matcher', 'hooks'];
 const EVENTS_WITHOUT_MATCHER = new Set(['UserPromptSubmit', 'Notification', 'Stop', 'SubagentStop']);
 
 function isNonEmptyString(value) {
@@ -39,6 +43,21 @@ function isNonEmptyString(value) {
 
 function isNonEmptyStringArray(value) {
   return Array.isArray(value) && value.length > 0 && value.every(item => isNonEmptyString(item));
+}
+
+/**
+ * Report keys Claude Code does not accept on the given object
+ * @param {object} object - Parsed JSON object to inspect
+ * @param {string[]} allowedKeys - Keys Claude Code recognises at this level
+ * @param {string} label - Label for error messages (e.g., "PreToolUse[0]")
+ * @returns {boolean} true if unknown keys were found
+ */
+function validateKnownKeys(object, allowedKeys, label) {
+  const unknownKeys = Object.keys(object).filter(key => !allowedKeys.includes(key));
+  for (const key of unknownKeys) {
+    console.error(`ERROR: ${label} has key '${key}' that Claude Code does not accept (allowed: ${allowedKeys.join(', ')})`);
+  }
+  return unknownKeys.length > 0;
 }
 
 /**
@@ -157,6 +176,12 @@ function validateHooks() {
   let hasErrors = false;
   let totalMatchers = 0;
 
+  if (data.hooks && typeof data.hooks === 'object' && !Array.isArray(data.hooks)) {
+    if (validateKnownKeys(data, ALLOWED_TOP_LEVEL_KEYS, 'hooks.json top level')) {
+      hasErrors = true;
+    }
+  }
+
   if (typeof hooks === 'object' && !Array.isArray(hooks)) {
     // Object format: { EventType: [matchers] }
     for (const [eventType, matchers] of Object.entries(hooks)) {
@@ -178,6 +203,9 @@ function validateHooks() {
           console.error(`ERROR: ${eventType}[${i}] is not an object`);
           hasErrors = true;
           continue;
+        }
+        if (validateKnownKeys(matcher, ALLOWED_MATCHER_KEYS, `${eventType}[${i}]`)) {
+          hasErrors = true;
         }
         if (!('matcher' in matcher) && !EVENTS_WITHOUT_MATCHER.has(eventType)) {
           console.error(`ERROR: ${eventType}[${i}] missing 'matcher' field`);
@@ -204,6 +232,9 @@ function validateHooks() {
     // Array format (legacy)
     for (let i = 0; i < hooks.length; i++) {
       const hook = hooks[i];
+      if (hook && typeof hook === 'object' && validateKnownKeys(hook, ALLOWED_MATCHER_KEYS, `Hook ${i}`)) {
+        hasErrors = true;
+      }
       if (!('matcher' in hook)) {
         console.error(`ERROR: Hook ${i} missing 'matcher' field`);
         hasErrors = true;
